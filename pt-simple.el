@@ -417,8 +417,8 @@ current second."
           (define-key mac-key-mode-map [?\A-o] 'find-file)
           (define-key mac-key-mode-map [?\A-/] 'comment-or-uncomment-region)))
     ;; been set at emacs-startup-hook
-    (setq mac-option-modifier 'meta)
-    (setq mac-command-modifier 'alt)))
+    (setq ns-alternate-modifier 'meta)
+    (setq ns-command-modifier 'alt)))
 
 ;; maximize frame
 (when (and window-system
@@ -540,7 +540,7 @@ current lines using `pt-delete-lines'."
                    pt-emacs-data-directory))))))
 
 (when (require 'ido nil t)
-  (ido-mode t)
+  (ido-mode 1)
   (mapc #'(lambda (buffer)
             (add-to-list 'ido-ignore-buffers buffer))
         pt-ignore-buffer-list)
@@ -558,10 +558,12 @@ current lines using `pt-delete-lines'."
   (setq ido-use-filename-at-point 'guess)
   (setq ido-enable-last-directory-history nil)
   (setq ido-confirm-unique-completion nil) ;; wait for RET, even for unique?
-  (setq ido-show-dot-for-dired t)          ;; put . as the first item
-  ;; (setq ido-use-filename-at-point t) ;; prefer file names near point
-  (define-key ido-common-completion-map (kbd "TAB") 'ido-next-match)
-  (define-key ido-common-completion-map (kbd "M-TAB") 'ido-prev-match))
+  (setq ido-show-dot-for-dired t) ;; put . as the first item
+  ;; (setq ido-use-filename-at-point t) ;; prefer file names near point)
+  (add-hook 'ido-setup-hook
+            #'(lambda ()
+                (define-key ido-common-completion-map (kbd "TAB") 'ido-next-match)
+                (define-key ido-common-completion-map (kbd "M-TAB") 'ido-prev-match))))
 
 (setq-default tab-width 4)
 
@@ -632,19 +634,28 @@ current lines using `pt-delete-lines'."
                        ido-recentf-list))))))
 
     (defun ido-kill-recentf-at-head ()
-      "Kill the recent file at the head of `ido-matches' and remove it from `recentf-list'.
-If cursor is not at the end of the user input, delete to end of input."
+      "Kill the recent file at the head of `ido-matches'
+and remove it from `recentf-list'. If cursor is not at
+the end of the user input, delete to end of input."
       (interactive)
       (if (not (eobp))
           (delete-region (point) (line-end-position))
         (let ((enable-recursive-minibuffers t)
               (file (ido-name (car ido-matches))))
           (when file
-            (setq recentf-list (delq (cdr (assoc file ido-recentf-list)) recentf-list))
-            (setq ido-recentf-list (delq (assoc file ido-recentf-list) ido-recentf-list))
-            (setq ido-cur-list (delq file ido-cur-list))))))
+            (setq recentf-list
+                  (delq (cdr (assoc file ido-recentf-list)) recentf-list))
+            (setq ido-recentf-list
+                  (delq (assoc file ido-recentf-list) ido-recentf-list))
+            (setq ido-cur-list
+                  (delq file ido-cur-list))))))
 
-    (define-key ido-common-completion-map [?\C-k] 'ido-kill-recentf-at-head)
+    (add-hook 'ido-setup-hook
+              #'(lambda ()
+                  (define-key
+                    ido-common-completion-map [?\C-k]
+                    'ido-kill-recentf-at-head)))
+
     (global-set-key "\C-x\ \C-r" 'recentf-ido-find-file)))
 
 ;; highlight the current line
@@ -951,7 +962,8 @@ beginning of current buffer."
 (global-set-key [?\M-m] 'set-mark-command)
 (when (fboundp 'cua-set-rectangle-mark)
   (global-set-key (kbd "M-S-SPC") 'cua-set-rectangle-mark))
-(global-set-key [?\C-x ?\C-b] 'ido-switch-buffer-other-window)
+(when (fboundp 'ido-switch-buffer-other-window)
+  (global-set-key [?\C-x ?\C-b] 'ido-switch-buffer-other-window))
 (global-set-key [f1 ?a] 'apropos)
 (global-set-key [?\C-a] 'pt-beginning-of-line-or-text)
 (global-set-key (kbd "RET") 'newline-and-indent)
