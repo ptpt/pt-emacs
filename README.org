@@ -1,10 +1,12 @@
-# Installation #
-1. Place all these files under ~/.emacs.d/
-2. Add the following lines to your ~/.emacs
-    (add-to-list 'load-path "~/.emacs.d/")
-    (require 'pt-simple)
+* Installation
+1) Place all these files under ~/.emacs.d/
+2) Add the following lines to your ~/.emacs
+   (add-to-list 'load-path "~/.emacs.d/")
+   (require 'pt-simple)
 
-# Commands #
+* Commands
+** Global key bindings
+
 +-----------------+----------------------------+
 |C-a              |pt-beginning-of-line-or-text|
 +-----------------+----------------------------+
@@ -13,17 +15,12 @@
 |C-w              |pt-kill-region              |
 +-----------------+----------------------------+
 |C-x C-n          |pt-new-buffer               |
-|                 |                            |
 +-----------------+----------------------------+
 |M-`, C-x <right> |pt-next-buffer              |
-|                 |                            |
-|                 |                            |
 +-----------------+----------------------------+
 |C-x <left>       |pt-previous-buffer          |
-|                 |                            |
 +-----------------+----------------------------+
 |C-x 2            |pt-split-window             |
-|                 |                            |
 +-----------------+----------------------------+
 |C-x 3            |pt-split-window-horizontally|
 +-----------------+----------------------------+
@@ -33,10 +30,18 @@
 +-----------------+----------------------------+
 |C-x l            |load-library                |
 +-----------------+----------------------------+
+|M-e              |pt-forward-whitespace       |
++-----------------+----------------------------+
+|M-a              |pt-backward-whitespace      |
++-----------------+----------------------------+
+|M-[              |beginning-of-defun          |
++-----------------+----------------------------+
+|M-]              |end-of-defun                |
++-----------------+----------------------------+
 |<tab>            |pt-tab-command              |
 +-----------------+----------------------------+
 
-## Mac OS X ##
+** Mac OS
 
 +-----+------------------+-----------+
 |A-m  |pt-toggle-maxframe|           |
