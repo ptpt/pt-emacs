@@ -26,8 +26,9 @@
           lisp-interaction-mode-hook
           emacs-lisp-mode-hook)))
 
-(define-key lisp-mode-shared-map [?\M-a] 'beginning-of-defun)
-(define-key lisp-mode-shared-map [?\M-e] 'end-of-defun)(setq ielm-prompt "* ")
+(define-key lisp-mode-shared-map [?\M-a] nil)
+(define-key lisp-mode-shared-map [?\M-e] nil)
+(setq ielm-prompt "* ")
 (setq inferior-lisp-program
       (or (executable-find "sbcl")
           (executable-find "lisp")

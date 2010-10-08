@@ -851,15 +851,19 @@ beginning of current buffer."
 (defun pt-forward-whitespace (&optional arg)
   "Move point forward whitespace."
   (interactive "p")
-  (re-search-forward "[^ \t\n\r\f$][ \t\n\r\f$]\\|\\'")
-  (unless (eolp)
+  (re-search-forward
+   "[^ \t\n\r\f$][ \t\n\r\f$]\\|\\'"
+   nil nil arg)
+  (unless (eobp)
     (backward-char)))
 
 (defun pt-backward-whitespace (&optional arg)
   "Move point backward whitespace."
   (interactive "p")
-  (re-search-backward "[ \t\n\r\f^][^ \t\n\r\f]\\|\\`")
-  (unless (bolp)
+  (re-search-backward
+   "[ \t\n\r\f^][^ \t\n\r\f^]\\|\\`"
+   nil nil arg)
+  (unless (bobp)
     (forward-char)))
 
 
@@ -1035,12 +1039,14 @@ beginning of current buffer."
 
 (global-set-key [?\M-\\] 'pt-hungry-delete)
 
-(global-set-key (kbd "M-]") 'pt-forward-whitespace)
-(global-set-key (kbd "M-[") 'pt-backward-whitespace)
+(global-set-key (kbd "M-]") 'end-of-defun)
+(global-set-key (kbd "M-[") 'beginning-of-defun)
 (add-hook 'Info-mode-hook
           #'(lambda ()(define-key Info-mode-map (kbd "M-n") nil)))
 
 (when window-system
   (global-set-key [C-backspace] 'pt-hungry-delete-backwards))
 
+(global-set-key (kbd "M-a") 'pt-backward-whitespace)
+(global-set-key (kbd "M-e") 'pt-forward-whitespace)
 ;; pt-simple ends here
