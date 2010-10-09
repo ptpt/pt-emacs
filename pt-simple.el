@@ -1049,4 +1049,15 @@ beginning of current buffer."
 
 (global-set-key (kbd "M-a") 'pt-backward-whitespace)
 (global-set-key (kbd "M-e") 'pt-forward-whitespace)
+
+(define-key pt-custom-global-map (kbd "SPC")
+  #'(lambda ()
+      (interactive)
+      (if mark-active
+          (whitespace-cleanup-region (point) (mark))
+        (whitespace-cleanup))))
+
+(define-key ctl-x-map (kbd "M-m") 'pop-global-mark)
+(global-set-key (kbd "C-z") 'undo)
+
 ;; pt-simple ends here
