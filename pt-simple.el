@@ -866,6 +866,11 @@ beginning of current buffer."
   (unless (bobp)
     (forward-char)))
 
+(add-hook 'kill-buffer-hook
+          #'(lambda ()
+              (when (interactive-p)
+                (pt-next-buffer))))
+
 
 ;; window settings
 (defun pt-split-window ()
