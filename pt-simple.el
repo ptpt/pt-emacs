@@ -152,11 +152,11 @@ If DIR is nil, add `user-emacs-directory' instead."
 
 (setq completion-ignore-case t)
 
-(when (locate-library "pcomplete")
-  (setq pcomplete-cycle-completions nil))
+;; (when (locate-library "pcomplete")
+;;   (setq pcomplete-cycle-completions nil))
 
-(when (locate-library "longlines")
-  (setq longlines-wrap-follows-window-size t))
+;; (when (locate-library "longlines")
+;;   (setq longlines-wrap-follows-window-size t))
 
 (setq-default case-fold-search t)
 
@@ -203,9 +203,7 @@ If DIR is nil, add `user-emacs-directory' instead."
 ;; url and mail address recognition
 (when (fboundp 'goto-address)
   (setq goto-address-fontify-maximum-size most-positive-fixnum)
-  (add-hook 'find-file-hook
-            #'(lambda ()
-                (goto-address-mode 1))))
+  (add-hook 'find-file-hook 'goto-address))
 
 (setq-default indicate-empty-lines       t
               indicate-buffer-boundaries t)
@@ -220,12 +218,12 @@ If DIR is nil, add `user-emacs-directory' instead."
                           eshell-mode-hook)))
 
 ;; linum from g.e.s -- much better than setnu
-(when (and (locate-library "linum")
-           (facep 'fringe))
-  (setq linum-format (propertize "%5d " 'face 'fringe)))
+;; (when (and (locate-library "linum")
+;;            (facep 'fringe))
+;;   (setq linum-format (propertize "%5d " 'face 'fringe)))
 
-(setq woman-use-own-frame nil)
-(setq mouse-buffer-menu-mode-mult 1)
+;; (setq woman-use-own-frame nil)
+;; (setq mouse-buffer-menu-mode-mult 1)
 
 (setq tramp-default-method "ssh")
 
@@ -278,13 +276,6 @@ If DIR is nil, add `user-emacs-directory' instead."
 
 (define-key pt-custom-global-map "d" 'diff-buffer-with-file)
 (setq diff-switches "-u")
-
-(when (fboundp 'org-mode)
-  (define-key pt-custom-global-map (kbd "o l") 'org-store-link)
-  (define-key pt-custom-global-map (kbd "o a") 'org-agenda))
-
-(when (fboundp 'remember)
-  (define-key pt-custom-global-map (kbd "r") 'remember))
 
 (when (eq window-system 'ns)
   (setq browse-url-browser-function 'browse-url-default-macosx-browser))
@@ -527,18 +518,6 @@ current lines using `pt-delete-lines'."
         clipboard-kill-region
         clipboard-kill-ring-save))
 
-;; http://www.youtube.com/watch?v=76Ygeg9miao
-(when (require 'yasnippet nil t) ;; not yasnippet-bundle
-  (yas/initialize)
-  (setq yas/trigger-key "TAB") ;;read by read-kbd-macro
-  (add-hook 'pt-after-init-functions
-            #'(lambda ()
-                (yas/load-directory
-                 (pt-get-directory-create
-                  (expand-file-name
-                   "snippets"
-                   pt-emacs-data-directory))))))
-
 (when (require 'ido nil t)
   (ido-mode 1)
   (mapc #'(lambda (buffer)
@@ -755,10 +734,10 @@ the end of the user input, delete to end of input."
 (defun pt-new-buffer (&optional arg)
   "Create a new buffer."
   (interactive "P")
-  (let ((mode (if arg (intern (read-from-minibuffer "Mode: ")) major-mode)))
+  (let ((mode (if arg major-mode default-major-mode)))
     (switch-to-buffer (generate-new-buffer "untitled"))
     (funcall mode)
-    (pt-yas-template)
+    ;; (pt-yas-template)
     (set-buffer-modified-p nil)
     (setq pt-new-buffer-query t)))
 
@@ -776,6 +755,7 @@ the end of the user input, delete to end of input."
 (defun pt-yas-template (&optional mode-symbol)
   "Insert template by expanding a yas key named #template-yas# for MODE-SYMBOL mode at
 beginning of current buffer."
+  (interactive)
   (unless (and (buffer-file-name) (file-exists-p (buffer-file-name)))
     (let* ((tables (yas/get-snippet-tables mode-symbol)))
       (dolist (table tables)
@@ -810,24 +790,35 @@ beginning of current buffer."
                           (list bname))))
                   (buffer-list)) "Buffer: "))
 
-(defun pt-next-buffer ()
-  "Switch to next buffer that is not in `pt-ignore-buffer-list'."
-  (interactive)
+(defmacro pt-xor (a b)
+  `(and (or ,a ,b) (not (and ,a ,b))))
+
+(defun pt-next-buffer (&optional arg)
+  "Switch to next buffer which is not in `pt-ignore-buffer-list'.
+If ARG is non-nil, then switch between file-visted-buffer and
+non-file-visted-buffer."
+  (interactive "P")
   (let ((buffer (current-buffer)))
     (next-buffer)
+    (setq arg (pt-xor (buffer-file-name buffer) arg))
     (while (and (not (eq buffer (current-buffer)))
-                (member (buffer-name (current-buffer))
-                        pt-ignore-buffer-list))
+                (or (member (buffer-name (current-buffer))
+                            pt-ignore-buffer-list)
+                    (if arg (not (buffer-file-name))
+                      (buffer-file-name))))
       (next-buffer))))
 
-(defun pt-previous-buffer ()
+(defun pt-previous-buffer (&optional arg)
   "Switch to previous that is not in `pt-ignore-buffer-list'"
-  (interactive)
+  (interactive "P")
   (let ((buffer (current-buffer)))
     (previous-buffer)
+    (setq arg (pt-xor (buffer-file-name buffer) arg))
     (while (and (not (eq buffer (current-buffer)))
-                (member (buffer-name (current-buffer))
-                        pt-ignore-buffer-list))
+                (or (member (buffer-name (current-buffer))
+                            pt-ignore-buffer-list)
+                    (if arg (not (buffer-file-name))
+                      (buffer-file-name))))
       (previous-buffer))))
 
 (defun pt-beginning-or-end-of-buffer (&optional arg)
@@ -871,8 +862,7 @@ beginning of current buffer."
                 (add-to-list 'pt-ignore-buffer-list
                              (buffer-name (window-buffer w))))
             (window-list))
-      (pt-next-buffer))
-    (pt-next-buffer)))
+      (pt-next-buffer))))
 
 (defun pt-split-window-horizontally ()
   "Split window horizontally into 2 windows with different buffers."
@@ -914,7 +904,7 @@ beginning of current buffer."
 ;; minibuffer settings
 (setq enable-recursive-minibuffers t)
 
-(require 'mb-depth nil t)
+;; (require 'mb-depth nil t)
 
 ;; default value at point
 (when (fboundp 'minibuffer-depth-indicate-mode)
@@ -928,9 +918,6 @@ beginning of current buffer."
 ;; icomplete-mode
 (autoload 'icomplete-mode "icomplete"
   "Toggle incremental minibuffer completion" t)
-
-(icomplete-mode t)
-(require 'icomplete+ nil 'noerror)
 
 ;; kill completion buffer when exit minibuffer
 (add-hook 'minibuffer-exit-hook
@@ -948,55 +935,40 @@ beginning of current buffer."
 
 
 ;;; global key bindings
+(global-set-key [f2] ctl-x-map)
 (when (eq 'ns window-system)
+  (global-set-key [?\A-n] 'pt-new-buffer)
   (global-set-key [?\A-\M-,]
                   #'(lambda ()
                       (interactive)
                       (find-file user-init-file))))
 
-(global-set-key [f1 ?r] 'elisp-index-search)
+(global-set-key [f1 ?j] 'elisp-index-search)
 (global-set-key (kbd "TAB") 'pt-tab-command)
 (global-set-key [?\M-m] 'set-mark-command)
-(when (fboundp 'cua-set-rectangle-mark)
-  (global-set-key (kbd "M-S-SPC") 'cua-set-rectangle-mark))
+;; (when (fboundp 'cua-set-rectangle-mark)
+;;   (global-set-key (kbd "M-S-SPC") 'cua-set-rectangle-mark))
 (when (fboundp 'ido-switch-buffer-other-window)
   (global-set-key [?\C-x ?\C-b] 'ido-switch-buffer-other-window))
-(global-set-key [f1 ?a] 'apropos)
+;; (global-set-key [f1 ?a] 'apropos)
 (global-set-key [?\C-a] 'pt-beginning-of-line-or-text)
 (global-set-key (kbd "RET") 'newline-and-indent)
 (global-set-key [?\M-n] 'forward-paragraph)
 (global-set-key [?\M-p] 'backward-paragraph)
 (global-set-key [escape] 'keyboard-quit)
 (global-set-key [?\C-x ?p] 'pop-to-mark-command)
-(global-set-key [?\C-x ?P] 'pop-global-mark)
-
-(define-key ctl-x-map (kbd "<right>")
-  #'(lambda ()
-      (interactive)
-      (pt-next-buffer)
-      (pt-list-buffers-in-minibuffer)))
-
-(define-key ctl-x-map (kbd "<left>")
-                #'(lambda ()
-                    (interactive)
-                    (pt-previous-buffer)
-                    (pt-list-buffers-in-minibuffer)))
 
 (global-set-key [?\C-x ?\C-n] 'pt-new-buffer)
-
-(when (eq 'ns window-system)
-  (global-set-key [?\A-n] 'pt-new-buffer))
 
 (autoload 'dired-jump "dired-x" "Jump to dired buffer")
 (global-set-key [?\C-x ?\C-d] 'dired-jump)
 
-(global-set-key [f2] ctl-x-map)
 
 (global-set-key (kbd "C-j")
                 #'(lambda ()
                     (interactive)
                     (end-of-line)
-                    (newline-and-indent)))
+                    (comment-indent-new-line)))
 
 (global-set-key (kbd "M-j")
                 #'(lambda ()
@@ -1018,20 +990,23 @@ beginning of current buffer."
 (global-set-key [?\C-w] 'pt-kill-region)
 
 ;; smart comment or uncomment line/region
-(define-key ctl-x-map (kbd "/")
-  'comment-or-uncomment-region)
+(define-key ctl-x-map (kbd "/") 'comment-or-uncomment-region)
 
 (define-key ctl-x-map "l" 'find-library)
 
-;; swith buffers
-(global-set-key (kbd "M-`")
-                #'(lambda ()
-                    (interactive)
-                    (pt-next-buffer)
-                    (pt-list-buffers-in-minibuffer)))
+(defun pt-switch-buffer (&optional arg)
+  "C-u M-x `pt-switch-buffer' switchs between file-visited-buffer and
+non-file-visited-buffer;
+C-u C-u M-x `pt-switch-buffer' switchs previous
+buffer."
+  (interactive "P")
+  (if (and (consp arg)
+           (= (car arg) 16))
+      (pt-previous-buffer arg)
+    (pt-next-buffer arg)))
 
+(global-set-key (kbd "M-`") 'pt-switch-buffer)
 (global-set-key [?\M-\\] 'pt-hungry-delete)
-
 (global-set-key (kbd "M-]") 'end-of-defun)
 (global-set-key (kbd "M-[") 'beginning-of-defun)
 (add-hook 'Info-mode-hook
@@ -1051,6 +1026,5 @@ beginning of current buffer."
         (whitespace-cleanup))))
 
 (define-key ctl-x-map (kbd "M-m") 'pop-global-mark)
-(global-set-key (kbd "C-z") 'undo)
-
+(define-key ctl-x-map [f2] 'other-window)
 ;; pt-simple ends here
