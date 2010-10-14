@@ -28,7 +28,6 @@
 
 ;;; Code:
 
-(provide 'pt-simple)
 (require 'cl)
 
 
@@ -41,19 +40,7 @@
   "Directory path that stores data file such as snippets, templates
   etc.")
 
-(defvar pt-fonts
-  '(
-    "Courier New"
-    ;; Free-as-in-* Consolas replacement
-    "Inconsolata"
-    ;; Very nice console font from Microsoft
-    "Consolas"
-    ;; Decent defaults on the Mac
-    "Andale Mono" "Monaco"
-    ;; My old X11 standbys
-    "Screen" "Lucida Console"
-    ;; A fallback that's on every system ever.
-    "Courier")
+(defvar pt-fonts nil
   "Fonts list, in decreasing order of preference.")
 
 (defvar pt-font-size 12
@@ -280,35 +267,31 @@ If DIR is nil, add `user-emacs-directory' instead."
 (when (eq window-system 'ns)
   (setq browse-url-browser-function 'browse-url-default-macosx-browser))
 
-(defun pt-font-spec (font size)
-  (format "%s-%d" font size))
-
 (defun pt-find-font ()
   "Return the first available font listed in `pt-fonts'."
   (let ((family-list (font-family-list)))
     (find-if (lambda (font) (member font family-list))
              pt-fonts)))
 
-(defvar pt-font (if window-system (pt-find-font) nil)
-  "My preferred font.Can be overridden in `local-elisp-config'.")
-
-(defun pt-set-font (&optional font size)
-  "Figure out and install which font and size I use on this system.
-If called interactively, prompts the user for the font and size to use."
-  (interactive
-   (list (completing-read (format "Font (default %s): " pt-font)
-                          (font-family-list) nil t nil nil pt-font)
-         (read-number "Size: " pt-font-size)))
-  (let* ((font (or font pt-font))
-         (size2 (or size pt-font-size))
-         (font-spec (pt-font-spec font size2)))
-    (when (or font size)
-      (add-to-list 'default-frame-alist (cons 'font font-spec))
-      (set-frame-font font-spec))))
+;; (defun pt-set-font (&optional font size)
+;;   "Figure out and install which font and size I use on this system.
+;; If called interactively, prompts the user for the font and size to use."
+;;   (interactive
+;;    (list (progn (setq font (or font (pt-find-font)))
+;;                 (setq size2 (or size pt-font-size))
+;;                 (completing-read (format "Font (default %s): " font)
+;;                                  (font-family-list) nil t nil nil font))
+;;          (read-number "Size: " pt-font-size)))
+;;   (let* ((font (or font pt-font))
+;;          (size2 (or size pt-font-size))
+;;          (font-spec (format "%s-%d" font size2)))
+;;     (when (or font size)
+;;       (add-to-list 'default-frame-alist (cons 'font font-spec))
+;;       (set-frame-font font-spec))))
 
 ;; if it's not tty
 (unless (tty-type)
-  (add-hook 'emacs-startup-hook 'pt-set-font)
+  ;; (add-hook 'emacs-startup-hook 'pt-set-font)
   (when (fboundp 'text-scale-increase)
     (global-set-key (kbd "M-=") 'text-scale-increase)
     (global-set-key (kbd "M--") 'text-scale-decrease)))
@@ -548,7 +531,7 @@ current lines using `pt-delete-lines'."
 
 (setq cua-enable-cua-keys nil)
 (cua-mode 1)
-(define-key cua--region-keymap [?\C-w] 'cua-cut-region)
+;; (define-key cua--region-keymap [?\C-w] 'cua-cut-region)
 (define-key cua-global-keymap [(control return)] nil)
 
 (add-hook 'pt-after-init-functions
@@ -638,13 +621,13 @@ the end of the user input, delete to end of input."
     (global-set-key "\C-x\ \C-r" 'recentf-ido-find-file)))
 
 ;; highlight the current line
-(when (locate-library "hl-line")
-  (autoload 'global-hl-line-mode "hl-line"
-    "Highlight current line." t)
-  (autoload 'hl-line-mode "hl-line"
-    "Global highlight current line." t)
-  (when window-system
-    (global-hl-line-mode 1)))
+;; (when (locate-library "hl-line")
+;;   (autoload 'global-hl-line-mode "hl-line"
+;;     "Highlight current line." t)
+;;   (autoload 'hl-line-mode "hl-line"
+;;     "Global highlight current line." t)
+;;   (when window-system
+;;     (global-hl-line-mode 1)))
 
 (add-hook 'pt-after-init-functions
           #'(lambda ()
@@ -767,29 +750,6 @@ beginning of current buffer."
 
 (add-hook 'find-file-hook 'pt-yas-template)
 
-(defun pt-print-list (lst &optional head)
-  "Print pretty list."
-  (let (result)
-    (minibuffer-message
-     (concat head
-             (dolist (item lst result)
-               (setq result
-                     (concat result
-                             (format "| %s " item))))
-             "|"))))
-
-(defun pt-list-buffers-in-minibuffer ()
-  "List buffers in minibuffer"
-  (pt-print-list (mapcan
-                  #'(lambda (b)
-                      (let ((bname (buffer-name b)))
-                        (when
-                            (or (buffer-file-name b)
-                                (and (not (member bname pt-ignore-buffer-list))
-                                     (not (string= (substring bname 0 1) " "))))
-                          (list bname))))
-                  (buffer-list)) "Buffer: "))
-
 (defmacro pt-xor (a b)
   `(and (or ,a ,b) (not (and ,a ,b))))
 
@@ -809,7 +769,9 @@ non-file-visted-buffer."
       (next-buffer))))
 
 (defun pt-previous-buffer (&optional arg)
-  "Switch to previous that is not in `pt-ignore-buffer-list'"
+  "Switch to previous buffer which is not in `pt-ignore-buffer-list'.
+If ARG is non-nil, then switch between file-visted-buffer and
+non-file-visted-buffer."
   (interactive "P")
   (let ((buffer (current-buffer)))
     (previous-buffer)
@@ -918,6 +880,7 @@ non-file-visted-buffer."
 ;; icomplete-mode
 (autoload 'icomplete-mode "icomplete"
   "Toggle incremental minibuffer completion" t)
+(icomplete-mode t)
 
 ;; kill completion buffer when exit minibuffer
 (add-hook 'minibuffer-exit-hook
@@ -1027,4 +990,6 @@ buffer."
 
 (define-key ctl-x-map (kbd "M-m") 'pop-global-mark)
 (define-key ctl-x-map [f2] 'other-window)
+
+(provide 'pt-simple)
 ;; pt-simple ends here
