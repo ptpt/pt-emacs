@@ -43,10 +43,6 @@
 (defvar pt-fonts nil
   "Fonts list, in decreasing order of preference.")
 
-(defvar pt-emacs-server t
-  "If non-null, this emacs should run an edit server.
-By edit server, I mean the bit that emacsclient or gnuclient talk to.")
-
 (defvar pt-custom-global-map (make-sparse-keymap)
   "Your own global-map.")
 (global-set-key [?\C-x ?g] pt-custom-global-map)
@@ -227,10 +223,10 @@ If DIR is nil, add `user-emacs-directory' instead."
 ;; follow symbolic link.
 (setq vc-follow-symlinks t)
 
-(setq skeleton-pair t)
-(global-set-key "[" 'skeleton-pair-insert-maybe)
-(global-set-key "{" 'skeleton-pair-insert-maybe)
-(global-set-key "\"" 'skeleton-pair-insert-maybe)
+;; (setq skeleton-pair t)
+;; (global-set-key "[" 'skeleton-pair-insert-maybe)
+;; (global-set-key "{" 'skeleton-pair-insert-maybe)
+;; (global-set-key "\"" 'skeleton-pair-insert-maybe)
 
 (when (require 'generic-x nil t)
   (setq default-major-mode 'default-generic-mode))
@@ -285,22 +281,6 @@ If called interactively, prompts the user for the font and size to use."
     (when font
       (add-to-list 'default-frame-alist (cons 'font font))
       (set-frame-font font))))
-
-;; (defun pt-set-font (&optional font size)
-;;   "Figure out and install which font and size I use on this system.
-;; If called interactively, prompts the user for the font and size to use."
-;;   (interactive
-;;    (list (progn (setq font (or font (pt-find-font)))
-;;                 (setq size2 (or size pt-font-size))
-;;                 (completing-read (format "Font (default %s): " font)
-;;                                  (font-family-list) nil t nil nil font))
-;;          (read-number "Size: " pt-font-size)))
-;;   (let* ((font (or font pt-font))
-;;          (size2 (or size pt-font-size))
-;;          (font-spec :name (format "%s-%d" font size2)))
-;;     (when (or font size)
-;;       (add-to-list 'default-frame-alist (cons 'font font-spec))
-;;       (set-frame-font font-spec))))
 
 ;; if it's not tty
 (unless (tty-type)
@@ -363,25 +343,35 @@ If called interactively, prompts the user for the font and size to use."
 (defun pt-choose-color-theme-by-second ()
   "Choose a valid color theme in `pt-color-theme-list' according to
 current second."
-  (let ((theme-list pt-color-theme-list)
-        theme)
-    (while theme-list
-      (setq theme (nth
-                   (mod (car (decode-time (current-time)))
-                        (length theme-list))
-                   theme-list))
-      (if (and (require theme nil t)
-               (fboundp theme))
-          (setq theme-list nil)
-        (remove theme theme-list)))
-    theme))
+  (if pt-color-theme-list
+   (nth
+    (mod (car (decode-time (current-time)))
+         (length pt-color-theme-list))
+    pt-color-theme-list)
+   nil))
 
-(when (require 'color-theme nil t)
-  (add-hook 'emacs-startup-hook
-            #'(lambda ()
-                (funcall
-                 (or (funcall (or pt-choose-color-theme-function 'ignore))
-                     'ignore)))))
+(defun pt-set-color-theme ()
+  "Set color theme by `pt-choose-color-theme-function'."
+  (interactive)
+  (let ((pt-color-theme-list pt-color-theme-list) color-theme)
+    (while pt-color-theme-list
+      (setq color-theme
+            (funcall (or pt-choose-color-theme-function 'ignore)))
+      (if (condition-case nil
+              (progn (cond
+                      ((listp color-theme)
+                       (eval color-theme))
+                      ((symbolp color-theme)
+                       (require color-theme)
+                       (funcall color-theme))
+                      (t (error "color theme not found")))
+                     t)
+            (error nil))
+          (setq pt-color-theme-list nil)
+        (remove color-theme pt-color-theme-list))
+      (setq pt-color-theme-list nil))))
+
+(add-hook 'emacs-startup-hook #'pt-set-color-theme)
 
 (autoload 'ansi-color-for-comint-mode-on "ansi-color" nil t)
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
@@ -633,15 +623,6 @@ the end of the user input, delete to end of input."
 
     (global-set-key "\C-x\ \C-r" 'recentf-ido-find-file)))
 
-;; highlight the current line
-;; (when (locate-library "hl-line")
-;;   (autoload 'global-hl-line-mode "hl-line"
-;;     "Highlight current line." t)
-;;   (autoload 'hl-line-mode "hl-line"
-;;     "Global highlight current line." t)
-;;   (when window-system
-;;     (global-hl-line-mode 1)))
-
 (add-hook 'pt-after-init-functions
           #'(lambda ()
               (when pt-emacs-tmp-directory
@@ -825,6 +806,17 @@ non-file-visted-buffer."
               (when (interactive-p)
                 (pt-next-buffer))))
 
+(defun pt-switch-buffer (&optional arg)
+  "C-u M-x `pt-switch-buffer' switchs between file-visited-buffer and
+non-file-visited-buffer;
+C-u C-u M-x `pt-switch-buffer' switchs previous
+buffer."
+  (interactive "P")
+  (if (or (and (numberp arg) (= arg 2))
+          (and (consp arg) (= (car arg) 16)))
+      (pt-previous-buffer)
+    (pt-next-buffer arg)))
+
 
 ;; window settings
 (defun pt-split-window ()
@@ -869,17 +861,9 @@ non-file-visted-buffer."
            (set-window-start w2 s1))))
   (other-window 1))
 
-(define-key ctl-x-map "2" 'pt-split-window)
-(define-key ctl-x-map "3" 'pt-split-window-horizontally)
-(winner-mode 1)
-(define-key ctl-x-map "7" 'pt-swap-windows)
-(define-key ctl-x-map "9" 'winner-undo)
-
 
 ;; minibuffer settings
 (setq enable-recursive-minibuffers t)
-
-;; (require 'mb-depth nil t)
 
 ;; default value at point
 (when (fboundp 'minibuffer-depth-indicate-mode)
@@ -902,16 +886,25 @@ non-file-visted-buffer."
                (kill-buffer "*Completions*"))))
 
 ;; get rid of the annoying error message "text is read-only"
+(defun pt-minibuffer-delete-backward-char (&optional arg)
+  (interactive "p")
+  (unless (get-text-property (- (point) 1) 'read-only)
+    (delete-backward-char arg)))
+
 (define-key minibuffer-local-map [backspace]
-  '(lambda (n)
-     (interactive "P")
-     (unless n (setq n 1))
-     (unless (get-text-property (- (point) 1) 'read-only)
-       (delete-backward-char n))))
+  'pt-minibuffer-delete-backward-char)
 
 
 ;;; global key bindings
 (global-set-key [f2] ctl-x-map)
+
+;; window bindings
+(define-key ctl-x-map "2" 'pt-split-window)
+(define-key ctl-x-map "3" 'pt-split-window-horizontally)
+(winner-mode 1)
+(define-key ctl-x-map "7" 'pt-swap-windows)
+(define-key ctl-x-map "9" 'winner-undo)
+
 (when (eq 'ns window-system)
   (global-set-key [?\A-n] 'pt-new-buffer)
   (global-set-key [?\A-\M-,]
@@ -932,15 +925,11 @@ non-file-visted-buffer."
 (global-set-key [?\M-n] 'forward-paragraph)
 (global-set-key [?\M-p] 'backward-paragraph)
 (global-set-key [escape] 'keyboard-quit)
-(global-set-key [?\C-x ?p] 'pop-to-mark-command)
-
-(global-set-key [?\C-x ?\C-n] 'pt-new-buffer)
 
 (autoload 'dired-jump "dired-x" "Jump to dired corresponding current buffer.")
 (autoload 'dired-jump-other-window "dired-x"
   "jump to dired corresponding current buffer in other window.")
 (global-set-key [?\C-x ?\C-d] 'dired-jump-other-window)
-
 
 (global-set-key (kbd "C-j")
                 #'(lambda ()
@@ -954,35 +943,21 @@ non-file-visted-buffer."
                     (beginning-of-line)
                     (split-line)))
 
-(mapc #'(lambda (key-command)
-          (define-key ctl-x-map
-            (car key-command)
-            (cdr key-command)))
-      '(([?\C-g] . keyboard-quit)
-        ("k" . kill-this-buffer)
-        ("f" . find-file)))
-
-(when (eq 'ns window-system)
-  (global-set-key [ns-drag-file] 'ns-find-file))
-
-(global-set-key [?\C-w] 'pt-kill-region)
+(define-key ctl-x-map [?\C-g] 'keyboard-quit)
+(define-key ctl-x-map "k" 'kill-this-buffer)
+(define-key ctl-x-map "f" 'find-file)
 
 ;; smart comment or uncomment line/region
 (define-key ctl-x-map (kbd "/") 'comment-or-uncomment-region)
-
 (define-key ctl-x-map "l" 'find-library)
+(define-key ctl-x-map (kbd "M-m") 'pop-global-mark)
+(define-key ctl-x-map [f2] 'other-window)
+(define-key ctl-x-map [?p] 'pop-to-mark-command)
+(define-key ctl-x-map [?\C-n] 'pt-new-buffer)
 
-(defun pt-switch-buffer (&optional arg)
-  "C-u M-x `pt-switch-buffer' switchs between file-visited-buffer and
-non-file-visited-buffer;
-C-u C-u M-x `pt-switch-buffer' switchs previous
-buffer."
-  (interactive "P")
-  (if (and (consp arg)
-           (= (car arg) 16))
-      (pt-previous-buffer arg)
-    (pt-next-buffer arg)))
-
+(when (eq 'ns window-system)
+  (global-set-key [ns-drag-file] 'ns-find-file))
+(global-set-key [?\C-w] 'pt-kill-region)
 (global-set-key (kbd "M-`") 'pt-switch-buffer)
 (global-set-key [?\M-\\] 'pt-hungry-delete)
 (global-set-key (kbd "M-]") 'end-of-defun)
@@ -1002,9 +977,6 @@ buffer."
       (if mark-active
           (whitespace-cleanup-region (point) (mark))
         (whitespace-cleanup))))
-
-(define-key ctl-x-map (kbd "M-m") 'pop-global-mark)
-(define-key ctl-x-map [f2] 'other-window)
 
 (provide 'pt-simple)
 ;; pt-simple ends here
