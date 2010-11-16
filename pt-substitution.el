@@ -25,7 +25,7 @@ with END-SIGN if END-SIGN is non-nil."
              (setq exp (read (current-buffer)))
              (when (or (null end-sign)
                        (search-forward end-sign nil t)
-                       (and (goto-char (point-max))
+                       (and (goto-char (or end (point-max)))
                             (if (not noerror)
                                 (error "End-sign `%s' not found." end-sign)
                               (setq result (cons exp-start (point))))
