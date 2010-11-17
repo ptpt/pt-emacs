@@ -57,6 +57,10 @@
     (concat "emacs-" version-int))
   "The name-version of this Emacs.")
 
+(defvar pt-new-buffer-mode-alist nil
+  "When create new buffer with prefix arg, the new buffer will use the
+  mode corresponding to the arg in this list as major mode.")
+
 (defvar pt-after-init-functions nil)
 
 (defmacro pt-get-directory-create (dir)
@@ -446,7 +450,7 @@ current lines using `pt-delete-lines'."
 (global-auto-revert-mode 1)
 
 ;; this can fix next-line vertical move problem
-(setq line-move-visual nil)
+(setq line-move-visual t)
 
 (defadvice keyboard-quit (before delete-windows activate)
   "Delete all matched window before really `keyboard-quit'"
@@ -598,57 +602,57 @@ the end of the user input, delete to end of input."
                 ido-common-completion-map [?\C-k]
                 'ido-kill-recentf-at-head)))
 
-(global-set-key "\C-x\ \C-r" 'recentf-ido-find-file)
+(define-key ctl-x-map "\C-r" 'recentf-ido-find-file)
 
-(add-hook 'pt-after-init-functions
-          #'(lambda ()
-              (when pt-emacs-tmp-directory
-                (setq auto-save-list-file-prefix
-                      (concat (pt-get-directory-create
-                               (expand-file-name
-                                (file-name-as-directory "auto-save-list")
-                                pt-emacs-tmp-directory))
-                              "save-list-")))))
+(require 'saveplace)
+(setq-default save-place t)
+(setq save-place-loaded nil)
+(setq save-place-alist nil)
 
-;; save auto-save files under `pt-emacs-tmp-directory'/auto-saves/
-(add-hook 'pt-after-init-functions
-          #'(lambda ()
-              (when pt-emacs-tmp-directory
-                (add-to-list 'auto-save-file-name-transforms
-                             (list "\\`\\(/[^/]+\\)*/\\([^/]+\\)\\'"
-                                   (concat (pt-get-directory-create
-                                            (expand-file-name
-                                             (file-name-as-directory "auto-saves")
-                                             pt-emacs-tmp-directory))
-                                           "\\2")
-                                   t)))))
-
-;; save backups under `pt-emacs-tmp-directory'/backups/
-(add-hook 'pt-after-init-functions
-          #'(lambda ()
-              (when pt-emacs-tmp-directory
-                (setq backup-directory-alist
-                      `((".*" . ,(pt-get-directory-create
-                                  (expand-file-name
-                                   (file-name-as-directory "backups")
-                                   pt-emacs-tmp-directory))))))))
-
-;; run hooks after init
 (add-hook 'after-init-hook
           #'(lambda ()
               (run-hooks 'pt-after-init-functions)))
 
-;; remember cursor position
-(when (require 'saveplace nil t)
-  (setq-default save-place t)
-  (add-hook 'after-init-hook
-            #'(lambda ()
-                (setq save-place-loaded nil)
-                (setq save-place-alist nil)
-                (setq save-place-file
-                      (expand-file-name
-                       "emacs-places" (pt-get-directory-create
-                                       pt-emacs-tmp-directory))))))
+(defmacro pt-eval-after-init (&rest form)
+  "Add FORM to hook `pt-after-init-functions'."
+  `(add-hook 'pt-after-init-functions
+             #'(lambda ()
+                 ,@form)))
+
+(when pt-emacs-tmp-directory
+  (pt-eval-after-init
+   (setq auto-save-list-file-prefix
+         (concat (pt-get-directory-create
+                  (expand-file-name
+                   (file-name-as-directory "auto-save-list")
+                   pt-emacs-tmp-directory))
+                 "save-list-")))
+
+  ;; save auto-save files under `pt-emacs-tmp-directory'/auto-saves/
+  (pt-eval-after-init
+   (add-to-list 'auto-save-file-name-transforms
+                (list "\\`\\(/[^/]+\\)*/\\([^/]+\\)\\'"
+                      (concat (pt-get-directory-create
+                               (expand-file-name
+                                (file-name-as-directory "auto-saves")
+                                pt-emacs-tmp-directory))
+                              "\\2")
+                      t)))
+
+  ;; save backups under `pt-emacs-tmp-directory'/backups/
+  (pt-eval-after-init
+   (setq backup-directory-alist
+         `((".*" . ,(pt-get-directory-create
+                     (expand-file-name
+                      (file-name-as-directory "backups")
+                      pt-emacs-tmp-directory))))))
+
+  ;; remember cursor position
+  (pt-eval-after-init
+   (setq save-place-file
+         (expand-file-name
+          "emacs-places" (pt-get-directory-create
+                          pt-emacs-tmp-directory)))))
 
 ;; create file when the file doesn't exist
 (add-hook 'write-file-functions
@@ -681,21 +685,43 @@ the end of the user input, delete to end of input."
       (pt-hungry-delete-forwards)
     (pt-hungry-delete-backwards)))
 
-(defvar pt-new-buffer-query nil
-  "Non-nil means killing buffer will be asked. For internal use, it's
-  been set automatically")
-(put 'pt-new-buffer-query 'permanent-local t)
-(make-variable-buffer-local 'pt-new-buffer-query)
+(defvar pt-new-buffer-is-me nil
+  "Non-nil means the buffer was created by `pt-new-buffer'. This kind of
+  buffer will serve as a special buffer, e.g. Killing this buffer will
+  be asked. It's for internal use and will be set automatically")
+(put 'pt-new-buffer-is-me 'permanent-local t)
+(make-variable-buffer-local 'pt-new-buffer-is-me)
 
 (defun pt-new-buffer (&optional arg)
   "Create a new buffer."
   (interactive "P")
-  (let ((mode (if arg major-mode default-major-mode)))
+  (let ((mode major-mode))
     (switch-to-buffer (generate-new-buffer "untitled"))
-    (funcall mode)
-    (setq pt-new-buffer-query t)
-    (run-hooks 'pt-new-buffer-hook)
+    (funcall
+     (cond ((numberp arg)
+            (or
+             (cdr (assoc (abs arg) pt-new-buffer-mode-alist))
+             default-major-mode))
+           ((consp arg)
+            mode)
+           (t default-major-mode)))
+    (setq pt-new-buffer-is-me t)
+    (if (or (and (numberp arg)
+                 (>= arg 0))
+            (and (consp arg)
+                 (= 4 (car arg))))
+        (run-hooks 'pt-new-buffer-hook))
     (set-buffer-modified-p nil)))
+
+;; (defun pt-new-buffer (&optional arg)
+;;   "Create a new buffer."
+;;   (interactive "P")
+;;   (let ((mode (if arg major-mode default-major-mode)))
+;;     (switch-to-buffer (generate-new-buffer "untitled"))
+;;     (funcall mode)
+;;     (setq pt-new-buffer-is-me t)
+;;     (run-hooks 'pt-new-buffer-hook)
+;;     (set-buffer-modified-p nil)))
 
 (add-hook 'kill-buffer-query-functions
               'pt-new-buffer-query-funtion)
@@ -707,7 +733,7 @@ the end of the user input, delete to end of input."
 
 (defun pt-new-buffer-query-funtion ()
   ;; (delete* 'pt-new-buffer-query-funtion kill-buffer-query-functions)
-  (if (and pt-new-buffer-query
+  (if (and pt-new-buffer-is-me
            (not (buffer-file-name))
            (buffer-modified-p)
            (> (buffer-size) 0))
@@ -722,14 +748,17 @@ the end of the user input, delete to end of input."
 If ARG is non-nil, then switch between file-visted-buffer and
 non-file-visted-buffer."
   (interactive "P")
-  (let ((buffer (current-buffer)))
+  (let ((buffer (current-buffer))
+        (new-buffer pt-new-buffer-is-me))
     (next-buffer)
-    (setq arg (pt-xor (buffer-file-name buffer) arg))
+    (setq arg (pt-xor (or new-buffer
+                          (buffer-file-name buffer)) arg))
     (while (and (not (eq buffer (current-buffer)))
-                (or (member (buffer-name (current-buffer))
+                (or (member (buffer-name)
                             pt-ignore-buffer-list)
-                    (if arg (not (buffer-file-name))
-                      (buffer-file-name))))
+                    (if arg (and (not pt-new-buffer-is-me)
+                                 (not (buffer-file-name)))
+                      (or pt-new-buffer-is-me (buffer-file-name)))))
       (next-buffer))))
 
 (defun pt-previous-buffer (&optional arg)
@@ -737,14 +766,17 @@ non-file-visted-buffer."
 If ARG is non-nil, then switch between file-visted-buffer and
 non-file-visted-buffer."
   (interactive "P")
-  (let ((buffer (current-buffer)))
+  (let ((buffer (current-buffer))
+        (new-buffer pt-new-buffer-is-me))
     (previous-buffer)
-    (setq arg (pt-xor (buffer-file-name buffer) arg))
+    (setq arg (pt-xor (or new-buffer
+                          (buffer-file-name buffer)) arg))
     (while (and (not (eq buffer (current-buffer)))
-                (or (member (buffer-name (current-buffer))
+                (or (member (buffer-name)
                             pt-ignore-buffer-list)
-                    (if arg (not (buffer-file-name))
-                      (buffer-file-name))))
+                    (if arg (and (not pt-new-buffer-is-me)
+                                 (not (buffer-file-name)))
+                      (or pt-new-buffer-is-me (buffer-file-name)))))
       (previous-buffer))))
 
 (defun pt-beginning-or-end-of-buffer (&optional arg)
@@ -772,12 +804,13 @@ non-file-visted-buffer."
     (forward-char)))
 
 (defadvice kill-this-buffer
-  (around pt-kill-this-buffer-and-switch-to-next-buffer activate)
-  (let ((cbuf (current-buffer)))
-    (when (called-interactively-p 'any)
-      (pt-next-buffer)
-      (with-current-buffer cbuf
-        ad-do-it))))
+  (after pt-kill-this-buffer-and-switch-to-next-buffer
+          activate)
+  (when (and (called-interactively-p 'any)
+             (and (null pt-new-buffer-is-me)
+                  (null (buffer-file-name))))
+    (print (current-buffer))
+    (pt-next-buffer 1)))
 
 (defun pt-switch-buffer (&optional arg)
   "C-u M-x `pt-switch-buffer' switchs between file-visited-buffer and
