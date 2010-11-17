@@ -36,12 +36,12 @@
   "Directory path that stores temporary files like auto-save files, backups
   etc.")
 
-(defvar pt-emacs-data-directory "~/.emacs.data/"
-  "Directory path that stores data file such as snippets, templates
-  etc.")
-
 (defvar pt-fonts nil
   "Fonts list, in decreasing order of preference.")
+
+(defvar pt-new-buffer-hook nil
+  "List of functions to be called after a new buffer is created by
+  `pt-new-buffer'.")
 
 (defvar pt-custom-global-map (make-sparse-keymap)
   "Your own global-map.")
@@ -58,8 +58,6 @@
   "The name-version of this Emacs.")
 
 (defvar pt-after-init-functions nil)
-(add-to-list 'load-path
-             (expand-file-name user-emacs-directory))
 
 (defmacro pt-get-directory-create (dir)
   "Create directory DIR if not found.
@@ -72,12 +70,22 @@ Return DIR."
   "Add all subdirectories not starting with \".\" of DIR to `load-path'.
 If DIR is nil, add `user-emacs-directory' instead."
   (mapc #'(lambda (file)
-          (if (file-directory-p file)
-              (add-to-list 'load-path file)))
-      (directory-files (or dir user-emacs-directory) t "\\`[^.]")))
+            (if (file-directory-p file)
+                (add-to-list 'load-path file)))
+        (directory-files (or dir user-emacs-directory) t "\\`[^.]")))
 
 ;; Add all sub-directories under `user-emacs-directory' to `load-path'.
-(pt-add-subdirectories-to-list)
+;; (pt-add-subdirectories-to-list)
+
+
+(defmacro pt-directory-equal (dir1 dir2)
+  "Return t if two directory pathes are same."
+  `(string-equal (file-name-as-directory
+                  (downcase (expand-file-name
+                             ,dir1)))
+                 (file-name-as-directory
+                  (downcase (expand-file-name
+                             ,dir2)))))
 
 (setq inhibit-startup-message t
       initial-major-mode 'lisp-interaction-mode)
@@ -188,7 +196,7 @@ If DIR is nil, add `user-emacs-directory' instead."
               indicate-buffer-boundaries t)
 
 (let ((hook #'(lambda ()
-                (setq indicate-empty-lines       nil
+                (setq indicate-empty-lines nil
                       indicate-buffer-boundaries nil))))
   (mapc #'(lambda (mode-hook)
             (add-hook mode-hook hook))
@@ -223,11 +231,6 @@ If DIR is nil, add `user-emacs-directory' instead."
 ;; follow symbolic link.
 (setq vc-follow-symlinks t)
 
-;; (setq skeleton-pair t)
-;; (global-set-key "[" 'skeleton-pair-insert-maybe)
-;; (global-set-key "{" 'skeleton-pair-insert-maybe)
-;; (global-set-key "\"" 'skeleton-pair-insert-maybe)
-
 (when (require 'generic-x nil t)
   (setq default-major-mode 'default-generic-mode))
 
@@ -248,10 +251,6 @@ If DIR is nil, add `user-emacs-directory' instead."
                 'face 'font-lock-variable-name-face))
 
   (setq eldoc-argument-case 'help-default-arg-highlight))
-
-;; (when (locate-library "table")
-;;   (autoload 'table-insert "table" nil t)
-;;   (define-key pt-custom-global-map "t" 'table-insert))
 
 (define-key pt-custom-global-map "d" 'diff-buffer-with-file)
 (setq diff-switches "-u")
@@ -296,7 +295,6 @@ If called interactively, prompts the user for the font and size to use."
 
 (when (display-graphic-p)
   (setq frame-title-format
-        ;; "file/buffer name" ["size"]
         '((buffer-file-name
            "%f [%I]"
            "%b [%I]")))
@@ -385,29 +383,9 @@ current second."
                         user-emacs-directory))
 
 (when (eq window-system 'ns)
-  (progn
-    (if (require 'mac-key-mode nil t)
-        (progn
-          (mac-key-mode 1)
-          (define-key mac-key-mode-map [?\A-m] 'toggle-maxframe)
-          (define-key mac-key-mode-map [?\A-w] 'delete-frame)
-          (define-key mac-key-mode-map [?\A-o] 'find-file)
-          (define-key mac-key-mode-map [?\A-/] 'comment-or-uncomment-region)))
-    ;; been set at emacs-startup-hook
-    (setq ns-alternate-modifier 'meta)
-    (setq ns-command-modifier 'alt)))
-
-;; maximize frame
-(when (and window-system
-           (require 'maxframe nil t))
-  (defun toggle-maxframe ()
-    "Toggle maxframe."
-    (interactive)
-    (if (or mf-restore-width mf-restore-height mf-restore-top mf-restore-left)
-        (restore-frame)
-      (maximize-frame)))
-  ;; (add-hook 'window-setup-hook 'maximize-frame t)
-  (global-set-key [?\A-m] 'toggle-maxframe))
+  ;; been set at emacs-startup-hook
+  (setq ns-alternate-modifier 'meta)
+  (setq ns-command-modifier 'alt))
 
 ;; set distributed elisp files read-only
 (when (eq window-system 'ns)
@@ -548,80 +526,79 @@ current lines using `pt-delete-lines'."
 
 (setq default-input-method nil)
 
-(when (require 'recentf nil t)
-  (recentf-mode 1)
-  (setq recentf-max-menu-items 25)
+(setq recentf-auto-cleanup 'never)
+(recentf-mode 1)
+(setq recentf-max-menu-items 25)
 
-  (when (require 'ido nil t)
-    (defvar ido-recentf-list nil)
-    (defun recentf-ido-find-file ()
-      "Find recently open file using ido-mode."
-      (interactive)
-      ;; remove symlinks
-      (setq recentf-list
-            (remove-duplicates
-             recentf-list
-             :test
-             '(lambda (x y)
-                (if (or (file-remote-p y) (file-remote-p x)) ;;fix tramp problem
-                    (string= x y)
-                  (string= (file-truename x)
-                           (file-truename y))))))
-      (setq ido-recentf-list
-            (let (records result)
-              (dolist (file recentf-list result)
-                (let* ((f (file-name-nondirectory file))
-                       (match (assoc f records)))
-                  (progn
-                    (if match
-                        (setcdr match (1+ (cdr match)))
-                      (setq records
-                            (append records
-                                    (list (cons f 1)))))
-                    (setq result
+(defvar ido-recentf-list nil)
+(defun recentf-ido-find-file ()
+  "Find recently open file using ido-mode."
+  (interactive)
+  ;; remove symlinks
+  (setq recentf-list
+        (remove-duplicates
+         recentf-list
+         :test
+         '(lambda (x y)
+            (if (or (file-remote-p y) (file-remote-p x)) ;;fix tramp problem
+                (string= x y)
+              (string= (file-truename x)
+                       (file-truename y))))))
+  (setq ido-recentf-list
+        (let (records result)
+          (dolist (file recentf-list result)
+            (let* ((f (file-name-nondirectory file))
+                   (match (assoc f records)))
+              (progn
+                (if match
+                    (setcdr match (1+ (cdr match)))
+                  (setq records
+                        (append records
+                                (list (cons f 1)))))
+                (setq result
                       (append result
-                         (list (cons
-                                 (concat f
-                                    (if (cdr match)
-                                      (concat "<"
-                                        (int-to-string
-                                         (cdr match)) ">")))
+                              (list (cons
+                                     (concat f
+                                             (if (cdr match)
+                                                 (concat "<"
+                                                         (int-to-string
+                                                          (cdr match)) ">")))
                                      file)))))
-                  result))))
-      (let ((filename
-             (ido-completing-read "Choose recent file: "
-                (mapcar 'car ido-recentf-list)
-                nil
-                t)))
-        (when filename
-          (find-file
-           (cdr (assoc filename
-                       ido-recentf-list))))))
+              result))))
+  (let ((filename
+         (ido-completing-read "Choose recent file: "
+                              (mapcar 'car ido-recentf-list)
+                              nil
+                              t)))
+    (when filename
+      (find-file
+       (cdr (assoc filename
+                   ido-recentf-list))))))
 
-    (defun ido-kill-recentf-at-head ()
-      "Kill the recent file at the head of `ido-matches'
+(defun ido-kill-recentf-at-head ()
+  "Kill the recent file at the head of `ido-matches'
 and remove it from `recentf-list'. If cursor is not at
 the end of the user input, delete to end of input."
-      (interactive)
-      (if (not (eobp))
-          (delete-region (point) (line-end-position))
-        (let ((enable-recursive-minibuffers t)
-              (file (ido-name (car ido-matches))))
-          (when file
-            (setq recentf-list
-                  (delq (cdr (assoc file ido-recentf-list)) recentf-list))
-            (setq ido-recentf-list
-                  (delq (assoc file ido-recentf-list) ido-recentf-list))
-            (setq ido-cur-list
-                  (delq file ido-cur-list))))))
+  (interactive)
+  (if (not (eobp))
+      (delete-region (point) (line-end-position))
+    (let ((enable-recursive-minibuffers t)
+          (file (ido-name (car ido-matches))))
+      (when file
+        (setq recentf-list
+              (delq (cdr (assoc file ido-recentf-list)) recentf-list))
+        (setq ido-recentf-list
+              (delq (assoc file ido-recentf-list) ido-recentf-list))
+        (setq ido-cur-list
+              (delq file ido-cur-list))))))
 
-    (add-hook 'ido-setup-hook
-              #'(lambda ()
-                  (define-key
-                    ido-common-completion-map [?\C-k]
-                    'ido-kill-recentf-at-head)))
+(add-hook 'ido-setup-hook
+          #'(lambda ()
+              (define-key
+                ido-common-completion-map [?\C-k]
+                'ido-kill-recentf-at-head)))
 
-    (global-set-key "\C-x\ \C-r" 'recentf-ido-find-file)))
+(global-set-key "\C-x\ \C-r" 'recentf-ido-find-file)
 
 (add-hook 'pt-after-init-functions
           #'(lambda ()
@@ -669,10 +646,9 @@ the end of the user input, delete to end of input."
                 (setq save-place-loaded nil)
                 (setq save-place-alist nil)
                 (setq save-place-file
-                      (pt-get-directory-create
-                       (expand-file-name
-                        "emacs-places"
-                        pt-emacs-tmp-directory))))))
+                      (expand-file-name
+                       "emacs-places" (pt-get-directory-create
+                                       pt-emacs-tmp-directory))))))
 
 ;; create file when the file doesn't exist
 (add-hook 'write-file-functions
@@ -705,7 +681,10 @@ the end of the user input, delete to end of input."
       (pt-hungry-delete-forwards)
     (pt-hungry-delete-backwards)))
 
-(defvar pt-new-buffer-query nil)
+(defvar pt-new-buffer-query nil
+  "Non-nil means killing buffer will be asked. For internal use, it's
+  been set automatically")
+(put 'pt-new-buffer-query 'permanent-local t)
 (make-variable-buffer-local 'pt-new-buffer-query)
 
 (defun pt-new-buffer (&optional arg)
@@ -714,35 +693,26 @@ the end of the user input, delete to end of input."
   (let ((mode (if arg major-mode default-major-mode)))
     (switch-to-buffer (generate-new-buffer "untitled"))
     (funcall mode)
-    ;; (pt-yas-template)
-    (set-buffer-modified-p nil)
-    (setq pt-new-buffer-query t)))
+    (setq pt-new-buffer-query t)
+    (run-hooks 'pt-new-buffer-hook)
+    (set-buffer-modified-p nil)))
+
+(add-hook 'kill-buffer-query-functions
+              'pt-new-buffer-query-funtion)
+
+(defun pt-buffer-file-name (&optional buffer)
+  (or (and (buffer-file-name buffer)
+           (file-name-nondirectory (buffer-file-name buffer)))
+      (buffer-name buffer)))
 
 (defun pt-new-buffer-query-funtion ()
+  ;; (delete* 'pt-new-buffer-query-funtion kill-buffer-query-functions)
   (if (and pt-new-buffer-query
            (not (buffer-file-name))
            (buffer-modified-p)
            (> (buffer-size) 0))
       (y-or-n-p (format "Buffer %s modified; kill anyway? " (buffer-name)))
     t))
-
-(add-hook 'kill-buffer-query-functions
-          'pt-new-buffer-query-funtion)
-
-(defun pt-yas-template (&optional mode-symbol)
-  "Insert template by expanding a yas key named #template-yas# for MODE-SYMBOL mode at
-beginning of current buffer."
-  (interactive)
-  (unless (and (buffer-file-name) (file-exists-p (buffer-file-name)))
-    (let* ((tables (yas/get-snippet-tables mode-symbol)))
-      (dolist (table tables)
-        (let ((template (yas/fetch table "yas-template$")))
-          (when template
-            (goto-char (point-min))
-            (yas/expand-snippet (yas/template-content (cdar template)))
-            (setq tables nil)))))))
-
-(add-hook 'find-file-hook 'pt-yas-template)
 
 (defmacro pt-xor (a b)
   `(and (or ,a ,b) (not (and ,a ,b))))
@@ -801,10 +771,13 @@ non-file-visted-buffer."
   (unless (bobp)
     (forward-char)))
 
-(add-hook 'kill-buffer-hook
-          #'(lambda ()
-              (when (interactive-p)
-                (pt-next-buffer))))
+(defadvice kill-this-buffer
+  (around pt-kill-this-buffer-and-switch-to-next-buffer activate)
+  (let ((cbuf (current-buffer)))
+    (when (called-interactively-p 'any)
+      (pt-next-buffer)
+      (with-current-buffer cbuf
+        ad-do-it))))
 
 (defun pt-switch-buffer (&optional arg)
   "C-u M-x `pt-switch-buffer' switchs between file-visited-buffer and
@@ -816,6 +789,101 @@ buffer."
           (and (consp arg) (= (car arg) 16)))
       (pt-previous-buffer)
     (pt-next-buffer arg)))
+
+(when (eq 'darwin system-type)
+  (defun pt-pbpaste ()
+    "Paste data from pasteboard."
+    (interactive)
+    (shell-command-on-region
+     (point)
+     (if mark-active (mark) (point))
+     "pbpaste" nil t))
+
+  (defun pt-pbcopy ()
+    "Copy region to pasteboard."
+    (interactive)
+    (when mark-active
+      (shell-command-on-region
+       (point) (mark) "pbcopy")
+      (kill-buffer "*Shell Command Output*")))
+
+  (global-set-key [?\C-x ?\C-y] 'pt-pbpaste)
+  (global-set-key [?\C-x ?\M-w] 'pt-pbcopy))
+
+(defun pt-read-env-from-profile (profile)
+  (let (count env)
+    (setq profile (expand-file-name profile))
+    (with-temp-buffer
+      (when (and (file-exists-p profile)
+                 (= 0 (call-process-shell-command
+                       (format "source \"%s\" && env && env | wc -l" profile)
+                       nil (buffer-name))))
+        (goto-char (point-max))
+        (re-search-backward "^[0-9]+$" nil t)
+        (setq count (match-string-no-properties 0))
+        (when count
+          (setq count (string-to-number count))
+          (beginning-of-line (- count))
+          (while (re-search-forward
+                  "\\([a-zA-Z_]+\\)=\\([^\n]*\\)\n" nil t)
+            (add-to-list 'env
+                         (cons (match-string-no-properties 1)
+                               (match-string-no-properties 2))))
+          env)))))
+
+(defun pt-read-env-from-paths.d ()
+  (let (env (paths ""))
+    (with-temp-buffer
+      (when (and (file-exists-p "/etc/paths.d/")
+                 (= 0 (call-process-shell-command
+                       "cat /etc/paths.d/*" nil (buffer-name))))
+        (goto-char (point-min))
+        (while (re-search-forward "\\(.*\\)\n" nil t)
+          (add-to-list 'env
+                       (cons "PATH"
+                             (match-string-no-properties 1))))))
+    env))
+
+(defun pt-setenv-path-from-system ()
+  "Set the value of PATH variable from system."
+  (let ((env (getenv "PATH"))
+        result)
+    (setq env (nconc (pt-read-env-from-profile ".bash_profile")
+                     (pt-read-env-from-paths.d)))
+    (dolist (e env result)
+      (if (string= "PATH" (car e))
+          (setq result (concat result (if result ":") (cdr e)))))
+    (setenv "PATH" result)))
+
+;; from internet
+(defun pt-rename-file-and-buffer (new-name)
+  "Renames both current buffer and file it's visiting to NEW-NAME."
+  (interactive "sNew name: ")
+  (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not filename)
+        (message "Buffer '%s' is not visiting a file!" name)
+      (if (get-buffer new-name)
+          (message "A buffer named '%s' already exists!" new-name)
+        (progn
+          (rename-file name new-name 1)
+          (rename-buffer new-name)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil))))))
+
+;; from internet
+(defun pt-delete-this-buffer-and-file ()
+  "Removes file connected to current buffer and kills buffer."
+  (interactive)
+  (let ((filename (buffer-file-name))
+        (buffer (current-buffer))
+        (name (buffer-name)))
+    (if (not (and filename (file-exists-p filename)))
+        (error "Buffer '%s' is not visiting a file!" name)
+      (when (yes-or-no-p "Are you sure you want to remove this file? ")
+        (delete-file filename)
+        (kill-buffer buffer)
+        (message "File '%s' successfully removed" filename)))))
 
 
 ;; window settings
@@ -977,6 +1045,11 @@ buffer."
       (if mark-active
           (whitespace-cleanup-region (point) (mark))
         (whitespace-cleanup))))
+
+(global-set-key [M-right] 'windmove-right)
+(global-set-key [M-left] 'windmove-left)
+(global-set-key [M-up] 'windmove-up)
+(global-set-key [M-down] 'windmove-down)
 
 (provide 'pt-simple)
 ;; pt-simple ends here
