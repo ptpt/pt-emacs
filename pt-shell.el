@@ -1,4 +1,3 @@
-
 ;; shell settings
 (add-hook 'term-mode-hook
           #'(lambda ()
@@ -20,13 +19,13 @@
            (getenv "SHELL")
            "/bin/sh"))))
 
-(defun pt-sh-newline ()
-  (interactive)
-  (when (looking-back "\\(done\\|fi\\|else\\)[ \t\n]*")
-    (indent-according-to-mode))
-  (newline-and-indent))
-
 (add-hook 'sh-mode-hook
           #'(lambda ()
+              (defun pt-sh-newline ()
+                (interactive)
+                (when (looking-back "\\(done\\|fi\\|else\\)[ \t\n]*")
+                  (indent-according-to-mode))
+                (newline-and-indent))
               (define-key sh-mode-map (kbd "RET") 'pt-sh-newline)))
+
 (provide 'pt-shell)
