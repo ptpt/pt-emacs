@@ -1,8 +1,11 @@
-(provide 'pt-cc)
+(require 'pt-compile-run)
 
 (mapc #'(lambda (hook)
           (add-hook hook
                     #'(lambda ()
+                        (when window-system
+                          (define-key c-mode-map
+                            [?\A-r] 'pt-compile-run))
                         (c-toggle-auto-newline t))))
       '(c-mode-hook c++-mode-hook))
 
