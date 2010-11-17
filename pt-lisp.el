@@ -2,30 +2,6 @@
 (when (eq 'ns window-system)
   (define-key lisp-mode-shared-map [?\A-r] 'eval-defun))
 
-(when (or (require 'paredit "paredit-beta" t)
-          (require 'paredit nil t))
-  ;; (define-key paredit-mode-map [?\C-j] nil)
-  (define-key paredit-mode-map [?\C-c ?s] 'paredit-splice-sexp)
-  (define-key paredit-mode-map [?\M-s] nil)
-  (define-key paredit-mode-map [?\C-j] nil)
-
-  (define-key paredit-mode-map [?\C-c ?r] 'paredit-raise-sexp)
-  (define-key paredit-mode-map [?\M-r] nil)
-
-  (define-key paredit-mode-map (kbd "C-c )") 'paredit-forward-slurp-sexp)
-  (define-key paredit-mode-map (kbd "C-c (") 'paredit-backward-slurp-sexp)
-  (define-key paredit-mode-map (kbd "C-c }") 'paredit-forward-barf-sexp)
-  (define-key paredit-mode-map (kbd "C-c {") 'paredit-backward-barf-sexp)
-  (define-key paredit-mode-map (kbd "C-c S") 'paredit-split-sexp)
-  (define-key paredit-mode-map (kbd "C-c J") 'paredit-join-sexps)
-  (mapc #'(lambda (hook)
-            (add-hook hook
-                      '(lambda ()
-                         (paredit-mode 1))))
-        '(lisp-mode-hook
-          lisp-interaction-mode-hook
-          emacs-lisp-mode-hook)))
-
 (define-key lisp-mode-shared-map [?\M-a] nil)
 (define-key lisp-mode-shared-map [?\M-e] nil)
 (setq ielm-prompt "* ")
@@ -44,7 +20,7 @@
 
 (defun ted-install-lispy-bindings (map bind-ret)
   "FIXME"
-  (define-key map (kbd "M-k") 'kill-sexp)
+  ;; (define-key map (kbd "M-k") 'kill-sexp)
   (define-key map (kbd "\"")
     (find-if 'commandp '(paredit-doublequote skeleton-pair-insert-maybe)))
   (when bind-ret
