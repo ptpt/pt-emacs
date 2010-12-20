@@ -17,7 +17,6 @@
 | [f2] [f2]        | other-window                   |
 | C-a              | pt-beginning-of-line-or-text   |
 | C-w              | pt-kill-region                 |
-| C-w              | pt-kill-region                 |
 | C-x /            | comment-or-uncomment-region    |
 | C-x 2            | pt-split-window                |
 | C-x 3            | pt-split-window-horizontally   |
@@ -27,24 +26,21 @@
 | C-x C-b          | ido-switch-buffer-other-window |
 | C-x C-d          | dired-jump-other-window        |
 | C-x C-n          | pt-new-buffer                  |
-| C-x C-n          | pt-new-buffer                  |
 | C-x k            | kill-this-buffer               |
 | C-x l            | find-library                   |
-| C-x l            | load-library                   |
 | C-x M-m          | pop-global-mark                |
+| M-<down>         | windmove-down                  |
+| M-<left>         | windmove-left                  |
+| M-<right>        | windmove-right                 |
+| M-<up>           | windmove-up                    |
 | M-[              | beginning-of-defun             |
-| M-\              | pt-hungry-delete               |
 | M-\              | pt-hungry-delete               |
 | M-]              | end-of-defun                   |
 | M-`, C-x <right> | pt-next-buffer                 |
 | M-a              | pt-backward-whitespace         |
-| M-down           | windmove-down                  |
 | M-e              | pt-forward-whitespace          |
-| M-left           | windmove-left                  |
 | M-n              | forward-paragraph              |
 | M-p              | backward-paragraph             |
-| M-right          | windmove-right                 |
-| M-up             | windmove-up                    |
 | RET              | newline-and-indent             |
 
 
