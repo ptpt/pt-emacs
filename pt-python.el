@@ -5,16 +5,19 @@
           '(lambda ()
              (define-key python-mode-map "'" 'skeleton-pair-insert-maybe)
              (define-key python-mode-map
-               [?\M-a] #'(lambda ()
+               [?\M-\[] #'(lambda ()
                            (interactive)
                            (python-beginning-of-defun)))
              (when (eq 'ns window-system)
                (define-key python-mode-map [?\A-r] 'pt-run-python))
 
              (define-key python-mode-map
-               [?\M-e] #'(lambda ()
+               [?\M-\]] #'(lambda ()
                           (interactive)
                           (python-end-of-defun)))))
+
+(add-to-list 'pt-compile-run-alist
+             '(python-mode nil . "$(progn python-command)$ $(buffer-file-name)$"))
 
 (defun pt-run-python ()
   "Save and run the script in a new frame."
