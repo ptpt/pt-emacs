@@ -79,6 +79,7 @@
   'pt-choose-color-theme-by-second
   "Function that returns a color theme.")
 
+(defvar pt-binary-range '(0 . 0))
 
 ;;; functions
 (defadvice message (around pt-inhibit-message compile)
@@ -174,7 +175,11 @@ current second."
         (remove color-theme pt-color-theme-list))
       (setq pt-color-theme-list nil))))
 
-(add-hook 'emacs-startup-hook #'pt-set-color-theme)
+;; (add-hook 'emacs-startup-hook #'pt-set-color-theme)
+(add-hook 'window-setup-hook
+          #'(lambda ()
+              (if window-system
+                  (pt-set-color-theme))))
 
 (defun pt-tab-command (&optional arg)
   "If mark is active, indent the region, otherwise run
@@ -253,58 +258,6 @@ current lines using `pt-delete-lines'."
         clipboard-kill-region
         clipboard-kill-ring-save))
 
-(defvar ido-recentf-list nil
-  "internal use")
-
-;; purge all files
-(defun pt-recentf-ido-find-file ()
-  "Find recently opened files using ido-mode."
-  (interactive)
-  (pt-inhibit-message
-   (recentf-cleanup))
-  (setq ido-recentf-list nil)
-  (let (records suffix)
-    (dolist (file recentf-list)
-      (let* ((f (file-name-nondirectory file))
-             (match (assoc f records)))
-        (if match
-            (setcdr match (1+ (cdr match)))
-          (add-to-list 'records
-                       (cons f 1)))
-        (setq suffix
-              (if (cdr match)
-                  (format "<%d>" (cdr match))
-                ""))
-        (add-to-list 'ido-recentf-list
-                     (cons (concat f suffix) file)
-                     t))))              ;append
-  (let ((filename
-         (ido-completing-read
-          "Open recent: "
-          (mapcar 'car ido-recentf-list)
-          nil t)))
-    (when filename
-      (find-file
-       (cdr (assoc filename
-                   ido-recentf-list))))))
-
-(defun pt-ido-kill-recentf-at-head ()
-  "Kill the recent file at the head of `ido-matches'
-and remove it from `recentf-list'. If cursor is not at
-the end of the user input, delete to end of input."
-  (interactive)
-  (if (not (eobp))
-      (delete-region (point) (line-end-position))
-    (let ((enable-recursive-minibuffers t)
-          (file (ido-name (car ido-matches))))
-      (when file
-        (setq recentf-list
-              (delq (cdr (assoc file ido-recentf-list)) recentf-list))
-        (setq ido-recentf-list
-              (delq (assoc file ido-recentf-list) ido-recentf-list))
-        (setq ido-cur-list
-              (delq file ido-cur-list))))))
-
 (defun pt-hungry-delete-backwards ()
   "Delete backwards whitespaces."
   (interactive)
@@ -350,14 +303,6 @@ the end of the user input, delete to end of input."
         (run-hooks 'pt-new-buffer-hook))
     (set-buffer-modified-p nil)))
 
-(add-hook 'kill-buffer-query-functions
-              'pt-new-buffer-query-funtion)
-
-(defun pt-buffer-file-name (&optional buffer)
-  (or (and (buffer-file-name buffer)
-           (file-name-nondirectory (buffer-file-name buffer)))
-      (buffer-name buffer)))
-
 (defun pt-new-buffer-query-funtion ()
   (if (and pt-new-buffer-is-me
            (not (buffer-file-name))
@@ -366,6 +311,14 @@ the end of the user input, delete to end of input."
       (y-or-n-p (format "Buffer %s modified; kill anyway? "
                         (buffer-name)))
     t))
+
+(add-hook 'kill-buffer-query-functions
+              'pt-new-buffer-query-funtion)
+
+(defun pt-buffer-file-name (&optional buffer)
+  (or (and (buffer-file-name buffer)
+           (file-name-nondirectory (buffer-file-name buffer)))
+      (buffer-name buffer)))
 
 (defmacro pt-xor (a b)
   "xor logic operation."
@@ -598,38 +551,98 @@ buffer."
            (set-window-start w2 s1))))
   (other-window 1))
 
+(defun pt-delete-directory-recursion (dir)
+  "Delete empty directories recursively."
+  (let ((dirs (directory-files dir t "\\`[^.]")))
+    (cond ((and (= 1(length dirs))
+                (file-directory-p (car dirs)))
+           (and (pt-delete-directory-recursion (car dirs))
+                (or (delete-directory dir) t)))
+          ((= 0 (length dirs))
+           (delete-directory dir) t)
+          (t nil))))
+
+(defun pt-get-directory-create-recursively (dir)
+  "Create directory DIR and return the a list of all parent directories
+that are needed to create."
+  (unless (file-exists-p dir)
+    (append (pt-get-directory-create-recursively (expand-file-name ".." dir))
+            (cons (progn (make-directory dir) (file-name-as-directory dir)) nil))))
+
+(defadvice save-buffer (around pave-path activate)
+  (if (and (not (buffer-file-name))
+           (called-interactively-p 'any))
+      (condition-case err
+          ad-do-it
+        (error
+         (let ((filename (and (listp file-name-history)
+                              (car file-name-history))))
+           (if (and (string-match "\\(.*\\): no such directory\\'" (cadr err))
+                    (stringp filename)
+                    (string-equal (match-string 1 (cadr err))
+                                  (file-name-directory (expand-file-name filename)))
+                    (y-or-n-p (format "%s; create? " (cadr err))))
+               (let* ((dirs (pt-get-directory-create-recursively
+                             (file-name-directory filename)))
+                      (buffer-name (buffer-name)))
+                 (condition-case err2
+                     (progn (set-visited-file-name filename)
+                            ad-do-it)
+                   (error
+                    (set-visited-file-name nil)
+                    (rename-buffer buffer-name)
+                    (mapc 'delete-directory (reverse dirs))
+                    (signal (car err2) (cdr err2)))))
+             (signal (car err) (cdr err))))))
+    ad-do-it))
+
+(add-hook 'write-file-functions ;; create file when the file doesn't exist
+          #'(lambda ()
+              (let ((dir (file-name-directory (buffer-file-name))))
+                (and (not (file-directory-p dir))
+                     (y-or-n-p (format "%s: no such directory; create? " dir))
+                     (make-directory dir t)))))
+
+(defun pt-binary-previous-line ()
+  (interactive)
+  (unless (memq last-command '(pt-binary-next-line pt-binary-previous-line))
+    (save-excursion
+      (let ((end (point)))
+        (setcdr pt-binary-range (line-number-at-pos))
+        (move-to-window-line 0)
+        (setcar pt-binary-range (- (cdr pt-binary-range)
+                                   (count-lines (point) end))))))
+  (setq arg (max 1 (ceiling (/ (- (cdr pt-binary-range)
+                                  (car pt-binary-range)) 2.0))))
+  (setcdr pt-binary-range (- (cdr pt-binary-range) arg))
+  (previous-line arg))
+
+(defun pt-binary-next-line ()
+  (interactive)
+  (unless (memq last-command '(pt-binary-next-line pt-binary-previous-line))
+    (save-excursion
+      (let ((start (point)))
+        (setcar pt-binary-range (line-number-at-pos))
+        (move-to-window-line -1)
+        (setcdr pt-binary-range (+ (count-lines start (point))
+                                   (car pt-binary-range))))))
+  (setq arg (max 1 (ceiling (/ (- (cdr pt-binary-range)
+                                  (car pt-binary-range)) 2.0))))
+  (setcar pt-binary-range (+ (car pt-binary-range) arg))
+  (next-line arg))
+
 
 ;; basic settings
 (add-hook 'post-command-hook 'pt-change-cursor-type)
 
 (show-paren-mode 1)
 
-(add-hook 'write-file-functions ;; create file when the file doesn't exist
-          '(lambda ()
-             (let ((directory (file-name-directory (buffer-file-name))))
-               (unless (file-directory-p directory)
-                 (make-directory directory t)))))
-
-(add-hook 'ido-setup-hook
-          #'(lambda ()
-              (define-key
-                ido-common-completion-map [?\C-k]
-                'pt-ido-kill-recentf-at-head)))
-
-(define-key ctl-x-map "\C-r" 'pt-recentf-ido-find-file)
-
 (setq-default save-place t)
 (require 'saveplace)
 
 (when pt-emacs-tmp-directory
   (pt-get-directory-create pt-emacs-tmp-directory)
-
-  (setq ido-save-directory-list-file
-        (expand-file-name "ido.last" pt-emacs-tmp-directory))
-
-  (setq recentf-save-file
-      (expand-file-name "recenf" pt-emacs-tmp-directory))
-
+  
   (setq bookmark-default-file
         (expand-file-name
          "bookmarks"
@@ -663,10 +676,6 @@ buffer."
   (setq save-place-file
         (expand-file-name
          "emacs-places" pt-emacs-tmp-directory)))
-
-(setq recentf-auto-cleanup 'never)
-(recentf-mode 1)
-(setq recentf-max-menu-items 25)
 
 ;; if it's not tty
 (unless (tty-type)
@@ -728,7 +737,7 @@ buffer."
        (concat pt-emacs-name-and-version "-custom.el")
        user-emacs-directory))
 
-(load custom-file)
+;; (load custom-file)
 
 (when (eq window-system 'ns)
   ;; been set at emacs-startup-hook
@@ -737,8 +746,6 @@ buffer."
 
 ;; set distributed elisp files read-only
 (when (eq window-system 'ns)
-  (add-to-list 'recentf-exclude
-               "/.+\\.app/Contents/Resources/.*\\.el")
   (add-hook 'find-file-hook
             '(lambda ()
                (let ((case-fold-search t))
@@ -754,32 +761,6 @@ buffer."
 (setq line-move-visual t)
 
 (setq scroll-preserve-screen-position t)
-
-;; (require 'ido nil t)
-(ido-mode 1)
-(mapc #'(lambda (buffer)
-          (add-to-list 'ido-ignore-buffers buffer))
-      pt-ignore-buffer-list)
-(setq ido-enable-dot-prefix t)
-(setq ido-enable-flex-matching t)
-(setq ido-execute-command-cache nil)
-;; do not confirm a new file or buffer
-(setq confirm-nonexistent-file-or-buffer nil)
-;; (ido-everywhere 1)
-(setq ido-enable-flex-matching t)
-(setq ido-create-new-buffer 'always)
-;; tramp problem solved here
-;; ido-enable-tramp-completion should be t (default)
-;; (setq ido-enable-tramp-completion t)
-(setq ido-use-filename-at-point 'guess)
-(setq ido-enable-last-directory-history nil)
-(setq ido-confirm-unique-completion nil) ;; wait for RET, even for unique?
-(setq ido-show-dot-for-dired t) ;; put . as the first item
-;; (setq ido-use-filename-at-point t) ;; prefer file names near point)
-(add-hook 'ido-setup-hook
-          #'(lambda ()
-              (define-key ido-common-completion-map (kbd "TAB") 'ido-next-match)
-              (define-key ido-common-completion-map (kbd "M-TAB") 'ido-prev-match)))
 
 (setq-default tab-width 4)
 
@@ -886,6 +867,7 @@ buffer."
           (add-hook mode-hook 'turn-on-eldoc-mode))
         '(emacs-lisp-mode-hook lisp-interaction-mode-hook
                                ielm-mode-hook))
+
 (defun help-default-arg-highlight (arg)
     "Upcase and fontify ARG for use with `eldoc-mode' and help."
     (propertize (upcase arg)
@@ -951,13 +933,13 @@ buffer."
 (global-set-key [?\M-m] 'set-mark-command)
 ;; (when (fboundp 'cua-set-rectangle-mark)
 ;;   (global-set-key (kbd "M-S-SPC") 'cua-set-rectangle-mark))
-(when (fboundp 'ido-switch-buffer-other-window)
-  (global-set-key [?\C-x ?\C-b] 'ido-switch-buffer-other-window))
 ;; (global-set-key [f1 ?a] 'apropos)
 (global-set-key [?\C-a] 'pt-beginning-of-line-or-text)
 (global-set-key (kbd "RET") 'newline-and-indent)
-(global-set-key [?\M-n] 'forward-paragraph)
-(global-set-key [?\M-p] 'backward-paragraph)
+(global-set-key [?\M-p] 'pt-binary-previous-line)
+(global-set-key [?\M-n] 'pt-binary-next-line)
+;; (global-set-key [?\M-n] 'forward-paragraph)
+;; (global-set-key [?\M-p] 'backward-paragraph)
 (global-set-key [escape] 'keyboard-quit)
 (define-key ctl-x-map [escape] 'keyboard-quit)
 
@@ -1020,6 +1002,6 @@ buffer."
 (global-set-key [M-down] 'windmove-down)
 
 (define-key ctl-x-map "t" 'ansi-term)
-(desktop-save-mode 1)
+
 (provide 'pt-simple)
 ;; pt-simple ends here
