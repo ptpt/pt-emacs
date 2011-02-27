@@ -603,33 +603,39 @@ that are needed to create."
                      (y-or-n-p (format "%s: no such directory; create? " dir))
                      (make-directory dir t)))))
 
-(defun pt-binary-previous-line ()
-  (interactive)
-  (unless (memq last-command '(pt-binary-next-line pt-binary-previous-line))
+(defun pt-binary-previous-line (&optional arg)
+  (interactive "P")
+  (when (or arg
+            (not (memq last-command
+                       '(pt-binary-next-line
+                         pt-binary-previous-line))))
     (save-excursion
       (let ((end (point)))
         (setcdr pt-binary-range (line-number-at-pos))
         (move-to-window-line 0)
         (setcar pt-binary-range (- (cdr pt-binary-range)
                                    (count-lines (point) end))))))
-  (setq arg (max 1 (ceiling (/ (- (cdr pt-binary-range)
-                                  (car pt-binary-range)) 2.0))))
-  (setcdr pt-binary-range (- (cdr pt-binary-range) arg))
-  (previous-line arg))
+  (let ((lines (max 1 (ceiling (/ (- (cdr pt-binary-range)
+                                     (car pt-binary-range)) 2.0)))))
+    (setcdr pt-binary-range (- (cdr pt-binary-range) lines))
+    (previous-line lines)))
 
-(defun pt-binary-next-line ()
-  (interactive)
-  (unless (memq last-command '(pt-binary-next-line pt-binary-previous-line))
+(defun pt-binary-next-line (&optional arg)
+  (interactive "P")
+  (when (or arg
+            (not (memq last-command
+                       '(pt-binary-next-line
+                         pt-binary-previous-line))))
     (save-excursion
       (let ((start (point)))
         (setcar pt-binary-range (line-number-at-pos))
         (move-to-window-line -1)
         (setcdr pt-binary-range (+ (count-lines start (point))
                                    (car pt-binary-range))))))
-  (setq arg (max 1 (ceiling (/ (- (cdr pt-binary-range)
-                                  (car pt-binary-range)) 2.0))))
-  (setcar pt-binary-range (+ (car pt-binary-range) arg))
-  (next-line arg))
+  (let ((lines  (max 1 (ceiling (/ (- (cdr pt-binary-range)
+                                      (car pt-binary-range)) 2.0)))))
+    (setcar pt-binary-range (+ (car pt-binary-range) lines))
+    (next-line lines)))
 
 
 ;; basic settings
@@ -642,7 +648,7 @@ that are needed to create."
 
 (when pt-emacs-tmp-directory
   (pt-get-directory-create pt-emacs-tmp-directory)
-  
+
   (setq bookmark-default-file
         (expand-file-name
          "bookmarks"
