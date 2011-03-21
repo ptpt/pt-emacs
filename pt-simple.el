@@ -432,8 +432,8 @@ buffer."
                        (format "source \"%s\" && env && env | wc -l" profile)
                        nil (buffer-name))))
         (goto-char (point-max))
-        (re-search-backward "^[0-9]+$" nil t)
-        (setq count (match-string-no-properties 0))
+        (when (re-search-backward "^\\s-*[0-9]+\\s-*$" nil t)
+          (setq count (match-string-no-properties 0)))
         (when count
           (setq count (string-to-number count))
           (beginning-of-line (- count))
@@ -459,9 +459,8 @@ buffer."
 
 (defun pt-setenv-path-from-system ()
   "Set the value of PATH variable from system."
-  (let ((env (getenv "PATH"))
-        result)
-    (setq env (nconc (pt-read-env-from-profile ".bash_profile")
+  (let ((env (getenv "PATH")) result)
+    (setq env (nconc (pt-read-env-from-profile "~/.bash_profile")
                      (pt-read-env-from-paths.d)))
     (dolist (e env result)
       (if (string= "PATH" (car e))
