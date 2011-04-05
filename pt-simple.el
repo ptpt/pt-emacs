@@ -734,6 +734,28 @@ the end of the user input, delete to end of input."
 ;; get rid of the annoying error message "text is read-only"
 
 ;; basic settings
+(setq ielm-prompt "* ")
+
+(setq inferior-lisp-program
+      (or (executable-find "sbcl")
+          (executable-find "lisp")
+          (executable-find "openmcl")
+          (executable-find "clisp")))
+
+(add-to-list 'auto-mode-alist '("\\.elc\\'" . emacs-lisp-mode))
+
+(mapc (lambda (hook)
+        (add-hook hook
+                  (lambda ()
+                    (linum-mode 1)
+                    (set (make-local-variable 'lisp-indent-function)
+                         'common-lisp-indent-function))))
+      '(lisp-mode-hook inferior-lisp-mode-hook))
+
+(add-hook 'emacs-lisp-mode-hook
+          #'(lambda ()
+              (linum-mode 1)))
+
 (when (and window-system
            (not (memq system-type '(ms-dos windows-nt))))
   (pt-setenv-path-from-system))
