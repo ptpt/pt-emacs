@@ -392,16 +392,16 @@ non-file-visted-buffer."
                   (null (buffer-file-name))))
     (pt-next-buffer 1)))
 
-(defun pt-switch-buffer (&optional arg)
-  "C-u M-x `pt-switch-buffer' switchs between file-visited-buffer and
-non-file-visited-buffer;
-C-u C-u M-x `pt-switch-buffer' switchs previous
-buffer."
-  (interactive "P")
-  (if (or (and (numberp arg) (= arg 2))
-          (and (consp arg) (= (car arg) 16)))
-      (pt-previous-buffer)
-    (pt-next-buffer arg)))
+;; (defun pt-switch-buffer (&optional arg)
+;;   "C-u M-x `pt-switch-buffer' switchs between file-visited-buffer and
+;; non-file-visited-buffer;
+;; C-u C-u M-x `pt-switch-buffer' switchs previous
+;; buffer."
+;;   (interactive "P")
+;;   (if (or (and (numberp arg) (= arg 2))
+;;           (and (consp arg) (= (car arg) 16)))
+;;       (pt-previous-buffer)
+;;     (pt-next-buffer arg)))
 
 (when (eq 'darwin system-type)
   (defun pt-pbpaste ()
