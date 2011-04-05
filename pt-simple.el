@@ -150,11 +150,11 @@ If called interactively, prompts the user for the font and size to use."
   "Choose a valid color theme in `pt-color-theme-list' according to
 current second."
   (if pt-color-theme-list
-   (nth
-    (mod (car (decode-time (current-time)))
-         (length pt-color-theme-list))
-    pt-color-theme-list)
-   nil))
+      (nth
+       (mod (car (decode-time (current-time)))
+            (length pt-color-theme-list))
+       pt-color-theme-list)
+    nil))
 
 (defun pt-set-color-theme ()
   "Set color theme by `pt-choose-color-theme-function'."
@@ -315,7 +315,7 @@ current lines using `pt-delete-lines'."
     t))
 
 (add-hook 'kill-buffer-query-functions
-              'pt-new-buffer-query-funtion)
+          'pt-new-buffer-query-funtion)
 
 (defun pt-buffer-file-name (&optional buffer)
   (or (and (buffer-file-name buffer)
@@ -388,7 +388,7 @@ non-file-visted-buffer."
 
 (defadvice kill-this-buffer
   (after pt-kill-this-buffer-and-switch-to-next-buffer
-          activate)
+         activate)
   (when (and (called-interactively-p 'any)
              (and (null pt-new-buffer-is-me)
                   (null (buffer-file-name))))
@@ -506,8 +506,8 @@ non-file-visted-buffer."
          (setq cursor-type 'box)
          (blink-cursor-mode -1))
         (t
-          (setq cursor-type (default-value 'cursor-type))
-          (blink-cursor-mode 1))))
+         (setq cursor-type (default-value 'cursor-type))
+         (blink-cursor-mode 1))))
 
 ;; window settings
 (defun pt-split-window ()
@@ -1032,14 +1032,14 @@ the end of the user input, delete to end of input."
 
 ;; `eldoc'. echo documents about function or variable at the point
 (mapc (lambda (mode-hook)
-          (add-hook mode-hook 'turn-on-eldoc-mode))
-        '(emacs-lisp-mode-hook lisp-interaction-mode-hook
-                               ielm-mode-hook))
+        (add-hook mode-hook 'turn-on-eldoc-mode))
+      '(emacs-lisp-mode-hook lisp-interaction-mode-hook
+                             ielm-mode-hook))
 
 (defun help-default-arg-highlight (arg)
-    "Upcase and fontify ARG for use with `eldoc-mode' and help."
-    (propertize (upcase arg)
-                'face 'font-lock-variable-name-face))
+  "Upcase and fontify ARG for use with `eldoc-mode' and help."
+  (propertize (upcase arg)
+              'face 'font-lock-variable-name-face))
 (setq eldoc-argument-case 'help-default-arg-highlight)
 
 (define-key pt-custom-global-map "d" 'diff-buffer-with-file)
