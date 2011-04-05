@@ -653,6 +653,15 @@ that are needed to create."
   (if mark-active
       (downcase-region (mark) (point))
     (downcase-word arg)))
+
+(defun pt-switch-buffer (&optional arg)
+  (interactive "P")
+  (if (not (one-window-p))
+      (other-window (or arg 1))
+    (progn
+      (if (consp arg)
+          (split-window))
+      (switch-to-buffer (other-buffer (current-buffer) t)))))
 
 ;; basic settings
 (add-hook 'post-command-hook 'pt-change-cursor-type)
