@@ -32,6 +32,8 @@
 
 
 ;; variables
+(defvar ido-recentf-list nil
+  "internal use")
 (defvar pt-emacs-tmp-directory "~/.emacs.tmp/"
   "Directory path that stores temporary files like auto-save files, backups
   etc.")
@@ -636,6 +638,55 @@ that are needed to create."
     (setcar pt-binary-range (+ (car pt-binary-range) lines))
     (next-line lines)))
 
+(defun pt-ido-kill-recentf-at-head ()
+  "Kill the recent file at the head of `ido-matches'
+and remove it from `recentf-list'. If cursor is not at
+the end of the user input, delete to end of input."
+  (interactive)
+  (if (not (eobp))
+      (delete-region (point) (line-end-position))
+    (let ((enable-recursive-minibuffers t)
+          (file (ido-name (car ido-matches))))
+      (when file
+        (setq recentf-list
+              (delq (cdr (assoc file ido-recentf-list)) recentf-list))
+        (setq ido-recentf-list
+              (delq (assoc file ido-recentf-list) ido-recentf-list))
+        (setq ido-cur-list
+              (delq file ido-cur-list))))))
+
+(defun pt-recentf-ido-find-file ()
+  "Find recently opened files using ido-mode."
+  (interactive)
+  (if (fboundp 'pt-inhibit-message)
+      (pt-inhibit-message
+       (recentf-cleanup)))
+  (setq ido-recentf-list nil)
+  (let (records suffix)
+    (dolist (file recentf-list)
+      (let* ((f (file-name-nondirectory file))
+             (match (assoc f records)))
+        (if match
+            (setcdr match (1+ (cdr match)))
+          (add-to-list 'records
+                       (cons f 1)))
+        (setq suffix
+              (if (cdr match)
+                  (format "<%d>" (cdr match))
+                ""))
+        (add-to-list 'ido-recentf-list
+                     (cons (concat f suffix) file)
+                     t))))              ;append
+  (let ((filename
+         (ido-completing-read
+          "Open recent: "
+          (mapcar 'car ido-recentf-list)
+          nil t)))
+    (when filename
+      (find-file
+       (cdr (assoc filename
+                   ido-recentf-list))))))
+
 (defun capitalize-word-or-region (&optional arg)
   (interactive "p")
   (if mark-active
@@ -680,6 +731,37 @@ that are needed to create."
 
 
 ;; basic settings
+
+;; (require 'ido nil t)
+(ido-mode 1)
+(if (boundp 'pt-ignore-buffer-list)
+    (mapc #'(lambda (buffer)
+              (add-to-list 'ido-ignore-buffers buffer))
+          pt-ignore-buffer-list))
+
+(setq ido-enable-dot-prefix t)
+(setq ido-enable-flex-matching t)
+(setq ido-execute-command-cache nil)
+;; do not confirm a new file or buffer
+(setq confirm-nonexistent-file-or-buffer nil)
+;; (ido-everywhere 1)
+(setq ido-enable-flex-matching t)
+(setq ido-create-new-buffer 'always)
+;; tramp problem solved here
+;; ido-enable-tramp-completion should be t (default)
+;; (setq ido-enable-tramp-completion t)
+
+;; but set it to nil to avoid initial message when ido-find-file
+;; (setq ido-enable-tramp-completion nil)
+
+(setq ido-use-filename-at-point 'guess)
+(setq ido-enable-last-directory-history nil)
+(setq ido-confirm-unique-completion nil) ;; wait for RET, even for unique?
+(setq ido-show-dot-for-dired t) ;; put . as the first item
+;; (setq ido-use-filename-at-point t) ;; prefer file names near point)
+(setq ido-save-directory-list-file
+      (expand-file-name "ido.last" pt-emacs-tmp-directory))
+
 (add-hook 'post-command-hook 'pt-change-cursor-type)
 
 (show-paren-mode 1)
@@ -689,7 +771,10 @@ that are needed to create."
 
 (when pt-emacs-tmp-directory
   (pt-get-directory-create pt-emacs-tmp-directory)
-
+  
+  (setq recentf-save-file
+        (expand-file-name "recenf" pt-emacs-tmp-directory))
+  
   (setq bookmark-default-file
         (expand-file-name
          "bookmarks"
@@ -723,6 +808,14 @@ that are needed to create."
   (setq save-place-file
         (expand-file-name
          "emacs-places" pt-emacs-tmp-directory)))
+
+(setq recentf-auto-cleanup 'never)
+(setq recentf-max-menu-items 25)
+(recentf-mode 1)
+;; set distributed elisp files read-only
+(when (eq window-system 'ns)
+  (add-to-list 'recentf-exclude
+               "/.+\\.app/Contents/Resources/.*\\.el"))
 
 ;; if it's not tty
 (unless (tty-type)
