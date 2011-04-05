@@ -1075,6 +1075,20 @@ the end of the user input, delete to end of input."
   (unless (get-text-property (- (point) 1) 'read-only)
     (delete-backward-char arg)))
 
+(if (>= emacs-major-version 22)
+    (remove-hook 'same-window-regexps "\\*info\\*\\(\\|<[0-9]+>\\)")
+  (remove-hook 'same-window-buffer-names "*info*"))
+(add-to-list 'special-display-buffer-names "*Help*")
+(add-to-list 'special-display-regexps "\\*info\\*\\(\\|<[0-9]+>\\)")
+(add-to-list 'special-display-buffer-names "*Apropos*")
+(setq special-display-frame-alist '((unsplittable . t)
+                                    (background-color . "#FAFAFA")
+                                    (minibuffer . nil)
+                                    (foreground-color . "#222222")))
+(add-hook 'after-make-frame-functions
+          #'(lambda (frame)
+              (shrink-frame-if-larger-than-buffer frame)))
+
 (define-key minibuffer-local-map [backspace]
   'pt-minibuffer-delete-backward-char)
 
