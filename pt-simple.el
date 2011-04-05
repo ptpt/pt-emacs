@@ -1058,6 +1058,42 @@ the end of the user input, delete to end of input."
 
 
 ;;; global key bindings
+;; ;; fix A-o binding to iso char problem in emacs 23.x
+(eval-after-load "iso-transl"
+  '(progn
+     (define-key key-translation-map [?\A-o] nil)
+     (define-key key-translation-map [?\A-c] nil)
+     (define-key key-translation-map [?\A-m] nil)
+     (define-key key-translation-map [?\A-u] nil)
+     (define-key key-translation-map [?\A-x] nil)))
+(when (eq window-system 'ns)
+  (global-set-key [(alt p)] 'print-buffer)
+  (global-set-key [(alt q)] 'save-buffers-kill-emacs)
+  (global-set-key [(alt z)] 'undo)
+  (global-set-key [(alt shift z)] 'redo) ; requires redo+
+  (global-set-key [(alt x)] 'clipboard-kill-region)
+  (global-set-key [(alt c)] 'clipboard-kill-ring-save)
+  (global-set-key [(alt v)] 'clipboard-yank)
+  (global-set-key [(alt a)] 'mark-whole-buffer)
+  (global-set-key [(alt f)] 'isearch-forward)
+  (global-set-key [(alt meta f)] 'occur)
+  (global-set-key [(alt g)] 'isearch-repeat-forward)
+  (global-set-key [(alt shift g)] 'isearch-repeat-backward)
+  (global-set-key [(alt l)] 'goto-line)
+  (global-set-key [?\A-m] 'toggle-maxframe)
+  (global-set-key [?\A-s] 'save-buffer)
+  (global-set-key [?\A-w] 'delete-frame)
+  (global-set-key [?\A-o] 'find-file)
+  (global-set-key [?\A-b] 'ido-switch-buffer)
+  (global-set-key [?\A-q] 'save-buffers-kill-emacs)
+  (global-set-key [?\A-w] #'(lambda ()
+                              (interactive)
+                              (if (equal 1 (length (visible-frame-list)))
+                                  (kill-this-buffer)
+                                (delete-frame))))
+  (global-set-key [?\A-`] 'other-frame)
+  (global-set-key [?\A-/] 'comment-or-uncomment-region))
+
 (global-set-key [f2] ctl-x-map)
 
 ;; window bindings
