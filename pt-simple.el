@@ -662,6 +662,22 @@ that are needed to create."
       (if (consp arg)
           (split-window))
       (switch-to-buffer (other-buffer (current-buffer) t)))))
+
+(defun shrink-frame-if-larger-than-buffer (&optional frame)
+  (interactive)
+  (when (null frame)
+    (setq frame (selected-frame)))
+  (let* ((window (frame-root-window frame))
+         (old-height (window-height window))
+         height)
+    (when (window-live-p window)
+      (split-window window)
+      (fit-window-to-buffer window)
+      (setq height (window-height window))
+      (unless (equal old-height height)
+        (set-frame-height frame height))
+      (delete-other-windows window))))
+
 
 ;; basic settings
 (add-hook 'post-command-hook 'pt-change-cursor-type)
