@@ -1066,6 +1066,18 @@ the end of the user input, delete to end of input."
      (define-key key-translation-map [?\A-m] nil)
      (define-key key-translation-map [?\A-u] nil)
      (define-key key-translation-map [?\A-x] nil)))
+(add-hook 'ido-setup-hook
+          #'(lambda ()
+              (define-key ido-common-completion-map (kbd "TAB") 'ido-next-match)
+              (define-key ido-common-completion-map (kbd "M-TAB") 'ido-prev-match)))
+(add-hook 'ido-setup-hook
+          #'(lambda ()
+              (define-key
+                ido-common-completion-map [?\C-k]
+                'pt-ido-kill-recentf-at-head)))
+
+(define-key ctl-x-map "\C-r" 'pt-recentf-ido-find-file)
+
 (when (eq window-system 'ns)
   (global-set-key [(alt p)] 'print-buffer)
   (global-set-key [(alt q)] 'save-buffers-kill-emacs)
