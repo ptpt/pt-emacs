@@ -636,6 +636,23 @@ that are needed to create."
     (setcar pt-binary-range (+ (car pt-binary-range) lines))
     (next-line lines)))
 
+(defun capitalize-word-or-region (&optional arg)
+  (interactive "p")
+  (if mark-active
+      (capitalize-region (mark) (point))
+    (capitalize-word arg)))
+
+(defun upcase-word-or-region (&optional arg)
+  (interactive "p")
+  (if mark-active
+      (upcase-region (mark) (point))
+    (upcase-word arg)))
+
+(defun downcase-word-or-region (&optional arg)
+  (interactive "p")
+  (if mark-active
+      (downcase-region (mark) (point))
+    (downcase-word arg)))
 
 ;; basic settings
 (add-hook 'post-command-hook 'pt-change-cursor-type)
