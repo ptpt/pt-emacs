@@ -731,6 +731,9 @@ the end of the user input, delete to end of input."
 
 
 ;; basic settings
+(when (and window-system
+           (not (memq system-type '(ms-dos windows-nt))))
+  (pt-setenv-path-from-system))
 
 ;; (require 'ido nil t)
 (ido-mode 1)
