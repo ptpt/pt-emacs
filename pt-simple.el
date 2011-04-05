@@ -731,6 +731,7 @@ the end of the user input, delete to end of input."
         (set-frame-height frame height))
       (delete-other-windows window))))
 
+;; get rid of the annoying error message "text is read-only"
 
 ;; basic settings
 (when (and window-system
