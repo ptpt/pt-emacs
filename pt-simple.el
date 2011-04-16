@@ -841,9 +841,13 @@ the end of the user input, delete to end of input."
 (setq recentf-max-menu-items 25)
 (recentf-mode 1)
 ;; set distributed elisp files read-only
-(when (eq window-system 'ns)
-  (add-to-list 'recentf-exclude
-               "/.+\\.app/Contents/Resources/.*\\.el"))
+(defun pt-recentf-exclute-libraries (filename)
+  (let ((base (file-name-nondirectory filename)))
+    (and (locate-library base)
+         (pt-directory-equal (locate-library base) filename))))
+
+(add-to-list 'recentf-exclude 'pt-recentf-exclute-libraries)
+(add-to-list 'recentf-exclude user-init-file)
 
 ;; if it's not tty
 (unless (tty-type)
