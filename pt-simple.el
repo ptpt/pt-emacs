@@ -115,14 +115,10 @@ If DIR is nil, add `user-emacs-directory' instead."
                 (add-to-list 'load-path file)))
         (directory-files (or dir user-emacs-directory) t "\\`[^.]")))
 
-(defmacro pt-directory-equal (dir1 dir2)
+(defmacro pt-same-file-p (f1 f2)
   "Return t if two directory pathes are same."
-  `(string-equal (file-name-as-directory
-                  (downcase (expand-file-name
-                             ,dir1)))
-                 (file-name-as-directory
-                  (downcase (expand-file-name
-                             ,dir2)))))
+  `(string-equal (downcase (file-name-as-directory (file-truename (expand-file-name ,f1))))
+                 (downcase (file-name-as-directory (file-truename (expand-file-name ,f2))))))
 
 (defun pt-find-font ()
   "Return the first available font listed in `pt-fonts'."
@@ -844,7 +840,7 @@ the end of the user input, delete to end of input."
 (defun pt-recentf-exclute-libraries (filename)
   (let ((base (file-name-nondirectory filename)))
     (and (locate-library base)
-         (pt-directory-equal (locate-library base) filename))))
+         (pt-same-file-p (locate-library base) filename))))
 
 (add-to-list 'recentf-exclude 'pt-recentf-exclute-libraries)
 (add-to-list 'recentf-exclude user-init-file)
