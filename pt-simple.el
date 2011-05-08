@@ -192,13 +192,13 @@ current second."
          (indent-for-tab-command arg))
         (t (dabbrev-expand arg))))
 
-(defun pt-beginning-of-line-or-text (&optional arg)
+(defun pt-beginning-of-line-or-text ()
   "Switch position between beginning of line and text."
-  (interactive "p")
+  (interactive)
   (let ((pt (point)))
-    (beginning-of-line-text arg)
+    (back-to-indentation)
     (when (= pt (point))
-      (beginning-of-line arg))))
+      (move-beginning-of-line nil))))
 
 (defun pt-delete-lines (&optional arg)
   "Delete lines like `delete-blank-lines'.
