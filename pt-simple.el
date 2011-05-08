@@ -1092,7 +1092,9 @@ the end of the user input, delete to end of input."
                                     (foreground-color . "#222222")))
 (add-hook 'after-make-frame-functions
           #'(lambda (frame)
-              (shrink-frame-if-larger-than-buffer frame)))
+              (when (display-graphic-p frame)
+                (shrink-frame-if-larger-than-buffer frame))))
+
 
 (define-key minibuffer-local-map [backspace]
   'pt-minibuffer-delete-backward-char)
