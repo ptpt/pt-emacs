@@ -674,7 +674,7 @@ the end of the user input, delete to end of input."
                 ""))
         (add-to-list 'ido-recentf-list
                      (cons (concat f suffix) file)
-                     t))))              ;append
+                     t))))
   (let ((filename
          (ido-completing-read
           "Open recent: "
@@ -800,10 +800,10 @@ the end of the user input, delete to end of input."
 
 (when pt-emacs-tmp-directory
   (pt-get-directory-create pt-emacs-tmp-directory)
-  
+
   (setq recentf-save-file
         (expand-file-name "recenf" pt-emacs-tmp-directory))
-  
+
   (setq bookmark-default-file
         (expand-file-name
          "bookmarks"
@@ -857,9 +857,6 @@ the end of the user input, delete to end of input."
     (global-set-key (kbd "M-=") 'text-scale-increase)
     (global-set-key (kbd "M--") 'text-scale-decrease)))
 
-;; (add-to-list 'default-frame-alist
-;;              '(wait-for-wm . nil))
-
 (setq initial-frame-alist default-frame-alist)
 
 (when (display-graphic-p)
@@ -905,10 +902,10 @@ the end of the user input, delete to end of input."
 ;;       custom-unlispify-menu-entries    nil
 ;;       custom-unlispify-remove-prefixes nil)
 
-(setq custom-file
-      (expand-file-name
-       (concat pt-emacs-name-and-version "-custom.el")
-       user-emacs-directory))
+;; (setq custom-file
+;;       (expand-file-name
+;;        (concat pt-emacs-name-and-version "-custom.el")
+;;        user-emacs-directory))
 
 ;; (load custom-file)
 
@@ -1028,8 +1025,8 @@ the end of the user input, delete to end of input."
 ;; follow symbolic link.
 (setq vc-follow-symlinks t)
 
-(when (require 'generic-x nil t)
-  (setq default-major-mode 'default-generic-mode))
+;; (when (require 'generic-x nil t)
+;;   (setq default-major-mode 'default-generic-mode))
 
 ;; completion in M-:
 (when (keymapp read-expression-map)
@@ -1186,7 +1183,6 @@ the end of the user input, delete to end of input."
                 #'(lambda ()
                     (interactive)
                     (end-of-line)
-                    ;; (comment-indent-new-line)
                     (newline-and-indent)))
 
 (global-set-key (kbd "M-j")
