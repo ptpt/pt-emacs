@@ -730,6 +730,11 @@ the end of the user input, delete to end of input."
 ;; get rid of the annoying error message "text is read-only"
 
 ;; basic settings
+
+(add-hook 'electric-buffer-menu-mode-hook
+          #'(lambda ()
+              (setq cursor-type 'box)))
+
 (setq ielm-prompt "* ")
 
 (setq inferior-lisp-program
@@ -1229,6 +1234,7 @@ the end of the user input, delete to end of input."
 (global-set-key [M-down] 'windmove-down)
 
 (define-key ctl-x-map "t" 'ansi-term)
+(global-set-key [?\C-x ?\C-b] 'electric-buffer-list)
 
 (provide 'pt-simple)
 ;; pt-simple ends here
