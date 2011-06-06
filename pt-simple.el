@@ -727,6 +727,14 @@ the end of the user input, delete to end of input."
         (set-frame-height frame height))
       (delete-other-windows window))))
 
+(defun pt-kill-line (&optional arg)
+  (interactive "P")
+  (if (looking-at "\n")
+      (progn (kill-line arg)
+             (delete-region (point) (progn (skip-chars-forward " \t")
+                                           (point))))
+    (kill-line arg)))
+
 ;; get rid of the annoying error message "text is read-only"
 
 ;; basic settings
@@ -1093,6 +1101,7 @@ the end of the user input, delete to end of input."
                 (shrink-frame-if-larger-than-buffer frame))))
 
 
+(global-set-key [?\C-k] 'pt-kill-line)
 (define-key minibuffer-local-map [backspace]
   'pt-minibuffer-delete-backward-char)
 
