@@ -252,8 +252,6 @@ current lines using `pt-delete-lines'."
         kill-region
         comment-region
         comment-or-uncomment-region
-        upcase-region
-        downcase-region
         clipboard-kill-region
         clipboard-kill-ring-save))
 
@@ -1231,6 +1229,10 @@ the end of the user input, delete to end of input."
 
 (define-key ctl-x-map "t" 'ansi-term)
 (global-set-key [?\C-x ?\C-b] 'electric-buffer-list)
+
+(global-set-key [?\M-u] 'upcase-word-or-region)
+(global-set-key [?\M-l] 'downcase-word-or-region)
+(global-set-key [?\M-c] 'capitalize-word-or-region)
 
 (provide 'pt-simple)
 ;; pt-simple ends here
