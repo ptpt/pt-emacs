@@ -50,7 +50,7 @@
   "Your own global-map.")
 (global-set-key [?\C-x ?g] pt-custom-global-map)
 
-(defvar pt-ignore-buffer-list
+(defvar pt-ignored-buffers
   '("*Help*" "*Completions*" "*Diff*" "*Messages*"
     "*Buffer List*" "*Apropos*")
   "Skip buffers in the list when `pt-next-buffer' and `pt-previous-buffer'.")
@@ -324,7 +324,7 @@ current lines using `pt-delete-lines'."
   `(and (or ,a ,b) (not (and ,a ,b))))
 
 (defun pt-next-buffer (&optional arg)
-  "Switch to next buffer which is not in `pt-ignore-buffer-list'.
+  "Switch to next buffer which is not in `pt-ignored-buffers'.
 If ARG is non-nil, then switch between file-visted-buffer and
 non-file-visted-buffer."
   (interactive "P")
@@ -335,14 +335,14 @@ non-file-visted-buffer."
                           (buffer-file-name buffer)) arg))
     (while (and (not (eq buffer (current-buffer)))
                 (or (member (buffer-name)
-                            pt-ignore-buffer-list)
+                            pt-ignored-buffers)
                     (if arg (and (not pt-new-buffer-is-me)
                                  (not (buffer-file-name)))
                       (or pt-new-buffer-is-me (buffer-file-name)))))
       (next-buffer))))
 
 (defun pt-previous-buffer (&optional arg)
-  "Switch to previous buffer which is not in `pt-ignore-buffer-list'.
+  "Switch to previous buffer which is not in `pt-ignored-buffers'.
 If ARG is non-nil, then switch between file-visted-buffer and
 non-file-visted-buffer."
   (interactive "P")
@@ -353,7 +353,7 @@ non-file-visted-buffer."
                           (buffer-file-name buffer)) arg))
     (while (and (not (eq buffer (current-buffer)))
                 (or (member (buffer-name)
-                            pt-ignore-buffer-list)
+                            pt-ignored-buffers)
                     (if arg (and (not pt-new-buffer-is-me)
                                  (not (buffer-file-name)))
                       (or pt-new-buffer-is-me (buffer-file-name)))))
@@ -512,9 +512,9 @@ non-file-visted-buffer."
   (interactive)
   (save-selected-window
     (select-window (split-window) t)
-    (let ((pt-ignore-buffer-list pt-ignore-buffer-list))
+    (let ((pt-ignored-buffers pt-ignored-buffers))
       (mapc #'(lambda (w)
-                (add-to-list 'pt-ignore-buffer-list
+                (add-to-list 'pt-ignored-buffers
                              (buffer-name (window-buffer w))))
             (window-list))
       (pt-next-buffer))))
@@ -524,9 +524,9 @@ non-file-visted-buffer."
   (interactive)
   (save-selected-window
     (select-window (split-window-horizontally) t)
-    (let ((pt-ignore-buffer-list pt-ignore-buffer-list))
+    (let ((pt-ignored-buffers pt-ignored-buffers))
       (mapc #'(lambda (w)
-                (add-to-list 'pt-ignore-buffer-list
+                (add-to-list 'pt-ignored-buffers
                              (buffer-name (window-buffer w))))
             (window-list))
       (pt-next-buffer))))
@@ -771,10 +771,10 @@ the end of the user input, delete to end of input."
 
 ;; (require 'ido nil t)
 (ido-mode 1)
-(if (boundp 'pt-ignore-buffer-list)
+(if (boundp 'pt-ignored-buffers)
     (mapc #'(lambda (buffer)
               (add-to-list 'ido-ignore-buffers buffer))
-          pt-ignore-buffer-list))
+          pt-ignored-buffers))
 
 (setq ido-enable-dot-prefix t)
 (setq ido-enable-flex-matching t)
