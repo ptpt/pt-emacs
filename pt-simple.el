@@ -1088,17 +1088,6 @@ the end of the user input, delete to end of input."
 (if (>= emacs-major-version 22)
     (remove-hook 'same-window-regexps "\\*info\\*\\(\\|<[0-9]+>\\)")
   (remove-hook 'same-window-buffer-names "*info*"))
-(add-to-list 'special-display-buffer-names "*Help*")
-(add-to-list 'special-display-regexps "\\*info\\*\\(\\|<[0-9]+>\\)")
-(add-to-list 'special-display-buffer-names "*Apropos*")
-(setq special-display-frame-alist '((unsplittable . t)
-                                    (background-color . "#FAFAFA")
-                                    (minibuffer . nil)
-                                    (foreground-color . "#222222")))
-(add-hook 'after-make-frame-functions
-          #'(lambda (frame)
-              (when (display-graphic-p frame)
-                (shrink-frame-if-larger-than-buffer frame))))
 
 
 (global-set-key [?\C-k] 'pt-kill-line)
