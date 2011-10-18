@@ -32,8 +32,9 @@
 
 
 ;; variables
-(defvar ido-recentf-list nil
+(defvar pt-ido-recentf-list nil
   "internal use")
+
 (defvar pt-emacs-tmp-directory "~/.emacs.tmp/"
   "Directory path that stores temporary files like auto-save files, backups
   etc.")
@@ -647,9 +648,9 @@ the end of the user input, delete to end of input."
           (file (ido-name (car ido-matches))))
       (when file
         (setq recentf-list
-              (delq (cdr (assoc file ido-recentf-list)) recentf-list))
-        (setq ido-recentf-list
-              (delq (assoc file ido-recentf-list) ido-recentf-list))
+              (delq (cdr (assoc file pt-ido-recentf-list)) recentf-list))
+        (setq pt-ido-recentf-list
+              (delq (assoc file pt-ido-recentf-list) pt-ido-recentf-list))
         (setq ido-cur-list
               (delq file ido-cur-list))))))
 
@@ -659,7 +660,7 @@ the end of the user input, delete to end of input."
   (if (fboundp 'pt-inhibit-message)
       (pt-inhibit-message
        (recentf-cleanup)))
-  (setq ido-recentf-list nil)
+  (setq pt-ido-recentf-list nil)
   (let (records suffix)
     (dolist (file recentf-list)
       (let* ((f (file-name-nondirectory file))
@@ -672,18 +673,17 @@ the end of the user input, delete to end of input."
               (if (cdr match)
                   (format "<%d>" (cdr match))
                 ""))
-        (add-to-list 'ido-recentf-list
+        (add-to-list 'pt-ido-recentf-list
                      (cons (concat f suffix) file)
                      t))))
   (let ((filename
          (ido-completing-read
           "Open recent: "
-          (mapcar 'car ido-recentf-list)
+          (mapcar 'car pt-ido-recentf-list)
           nil t)))
-    (when filename
-      (find-file
-       (cdr (assoc filename
-                   ido-recentf-list))))))
+    (let ((filename (assoc filename pt-ido-recentf-list)))
+      (when filename
+        (find-file (cdr filename))))))
 
 (defun capitalize-word-or-region (&optional arg)
   (interactive "p")
