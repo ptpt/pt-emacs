@@ -415,50 +415,6 @@ non-file-visted-buffer."
   (global-set-key [?\C-x ?\C-y] 'pt-pbpaste)
   (global-set-key [?\C-x ?\M-w] 'pt-pbcopy))
 
-(defun pt-read-env-from-profile (profile)
-  (let (count env)
-    (setq profile (expand-file-name profile))
-    (with-temp-buffer
-      (when (and (file-exists-p profile)
-                 (= 0 (call-process-shell-command
-                       (format "source \"%s\" && env && env | wc -l" profile)
-                       nil (buffer-name))))
-        (goto-char (point-max))
-        (when (re-search-backward "^\\s-*[0-9]+\\s-*$" nil t)
-          (setq count (match-string-no-properties 0)))
-        (when count
-          (setq count (string-to-number count))
-          (beginning-of-line (- count))
-          (while (re-search-forward
-                  "\\([a-zA-Z_]+\\)=\\([^\n]*\\)\n" nil t)
-            (add-to-list 'env
-                         (cons (match-string-no-properties 1)
-                               (match-string-no-properties 2))))
-          env)))))
-
-(defun pt-read-env-from-paths.d ()
-  (let (env (paths ""))
-    (with-temp-buffer
-      (when (and (file-exists-p "/etc/paths.d/")
-                 (= 0 (call-process-shell-command
-                       "cat /etc/paths.d/*" nil (buffer-name))))
-        (goto-char (point-min))
-        (while (re-search-forward "\\(.*\\)\n" nil t)
-          (add-to-list 'env
-                       (cons "PATH"
-                             (match-string-no-properties 1))))))
-    env))
-
-(defun pt-setenv-path-from-system ()
-  "Set the value of PATH variable from system."
-  (let ((env (getenv "PATH")) result)
-    (setq env (nconc (pt-read-env-from-profile "~/.bash_profile")
-                     (pt-read-env-from-paths.d)))
-    (dolist (e env result)
-      (if (string= "PATH" (car e))
-          (setq result (concat result (if result ":") (cdr e)))))
-    (setenv "PATH" result)))
-
 ;; from internet
 (defun pt-rename-file-and-buffer (new-name)
   "Renames both current buffer and file it's visiting to NEW-NAME."
@@ -757,11 +713,6 @@ the end of the user input, delete to end of input."
 (add-hook 'emacs-lisp-mode-hook
           #'(lambda ()
               (linum-mode 1)))
-
-(when (and window-system
-           (not (memq system-type '(ms-dos windows-nt))))
-  (pt-setenv-path-from-system))
-
 ;; (require 'ido nil t)
 (ido-mode 1)
 (if (boundp 'pt-ignored-buffers)
