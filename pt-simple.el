@@ -676,11 +676,6 @@ the end of the user input, delete to end of input."
   (unless (get-text-property (- (point) 1) 'read-only)
     (delete-backward-char arg)))
 
-(if (>= emacs-major-version 22)
-    (remove-hook 'same-window-regexps "\\*info\\*\\(\\|<[0-9]+>\\)")
-  (remove-hook 'same-window-buffer-names "*info*"))
-
-
 (global-set-key [?\C-k] 'pt-kill-line)
 (define-key minibuffer-local-map [backspace]
   'pt-minibuffer-delete-backward-char)
