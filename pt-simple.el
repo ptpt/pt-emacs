@@ -55,11 +55,6 @@
     "*Buffer List*" "*Apropos*")
   "Skip buffers in the list when `pt-next-buffer' and `pt-previous-buffer'.")
 
-(defconst pt-emacs-name-and-version
-  (let ((version-int (number-to-string emacs-major-version)))
-    (concat "emacs-" version-int))
-  "The name-version of this Emacs.")
-
 (defvar pt-new-buffer-mode-alist nil
   "When create new buffer with prefix arg, the new buffer will use the
   mode corresponding to the arg in this list as major mode.")
@@ -907,14 +902,6 @@ the end of the user input, delete to end of input."
 ;; (setq custom-unlispify-tag-names       nil
 ;;       custom-unlispify-menu-entries    nil
 ;;       custom-unlispify-remove-prefixes nil)
-
-;; (setq custom-file
-;;       (expand-file-name
-;;        (concat pt-emacs-name-and-version "-custom.el")
-;;        user-emacs-directory))
-
-;; (load custom-file)
-
 (when (eq window-system 'ns)
   ;; been set at emacs-startup-hook
   (setq ns-alternate-modifier 'meta)
