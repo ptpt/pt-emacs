@@ -46,10 +46,6 @@
   "List of functions to be called after a new buffer is created by
   `pt-new-buffer'.")
 
-(defvar pt-custom-global-map (make-sparse-keymap)
-  "Your own global-map.")
-(global-set-key [?\C-x ?g] pt-custom-global-map)
-
 (defvar pt-ignored-buffers
   '("*Help*" "*Completions*" "*Diff*" "*Messages*"
     "*Buffer List*" "*Apropos*")
@@ -816,13 +812,6 @@ the end of the user input, delete to end of input."
 
 (global-set-key (kbd "M-a") 'pt-backward-whitespace)
 (global-set-key (kbd "M-e") 'pt-forward-whitespace)
-
-(define-key pt-custom-global-map (kbd "SPC")
-  #'(lambda ()
-      (interactive)
-      (if mark-active
-          (whitespace-cleanup-region (point) (mark))
-        (whitespace-cleanup))))
 
 (global-set-key [M-right] 'windmove-right)
 (global-set-key [M-left] 'windmove-left)
