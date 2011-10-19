@@ -230,21 +230,23 @@ current lines using `pt-delete-lines'."
         pt-ignored-buffers)
   (keyboard-quit))
 
-;; act on lines if mark is not active
-(defmacro pt-defadvice-current-line-as-region (orig-function)
-  `(defadvice ,(eval orig-function) (before current-line-as-region activate compile)
+(defmacro pt-defun-treat-current-line-as-region (orig-function)
+  `(defun ,(intern (concat "pt-" (symbol-name (eval orig-function)))) (&optional arg)
      ,(format
        "Like `%s', except acts on the current line if mark is not active."
        (eval orig-function))
-     (interactive
-      (if mark-active
-          (list (region-beginning) (region-end))
-        (list (line-beginning-position)
-              (line-beginning-position
-               (+ 1 (prefix-numeric-value current-prefix-arg))))))))
+     (interactive "p")
+     (save-excursion
+       (when (not mark-active)
+         (beginning-of-line)
+         (push-mark-command t t)
+         (end-of-line arg))
+       (call-interactively (quote ,(eval orig-function))))))
 
 (mapc #'(lambda (command)
-          (pt-defadvice-current-line-as-region command))
+          (global-set-key (vector 'remap command)
+                          (intern (concat "pt-" (symbol-name command))))
+          (pt-defun-treat-current-line-as-region command))
       '(kill-ring-save
         kill-region
         comment-region
