@@ -220,13 +220,15 @@ current lines using `pt-delete-lines'."
       (kill-region (mark) (point))
     (pt-delete-lines arg)))
 
-(defadvice keyboard-quit (before delete-windows activate)
-  "Delete all matched window before really `keyboard-quit'"
+(defun pt-keyboard-quit ()
+  "Delete all windows that match `pt-ignored-buffers' and then call `keyboard-quit'"
+  (interactive)
   (mapc #'(lambda (name)
             (dolist (window (cdr (window-list nil nil (selected-window))))
               (if (string-equal name (buffer-name (window-buffer window)))
                   (delete-window window))))
-        pt-ignore-buffer-list))
+        pt-ignored-buffers)
+  (keyboard-quit))
 
 ;; act on lines if mark is not active
 (defmacro pt-defadvice-current-line-as-region (orig-function)
@@ -1105,7 +1107,7 @@ the end of the user input, delete to end of input."
 (global-set-key (kbd "RET") 'newline-and-indent)
 (global-set-key [?\M-p] 'pt-binary-previous-line)
 (global-set-key [?\M-n] 'pt-binary-next-line)
-(global-set-key [escape] 'keyboard-quit)
+(global-set-key [escape] 'pt-keyboard-quit)
 (define-key ctl-x-map [escape] 'keyboard-quit)
 
 (autoload 'dired-jump "dired-x" "Jump to dired corresponding current buffer.")
