@@ -217,12 +217,12 @@ But if current line is not blank, it will `kill-whole-line'."
           (kill-whole-line arg))
         (move-to-column col)))))
 
-(defun pt-kill-region (&optional arg)
+(defun pt-kill-region-or-line (&optional arg)
   "If mark is active, act `kill-region' as normal, otherwise delete
 current lines using `pt-delete-lines'."
   (interactive "p")
   (if mark-active
-      (kill-region (point) (mark))
+      (kill-region (mark) (point))
     (pt-delete-lines arg)))
 
 (defadvice keyboard-quit (before delete-windows activate)
@@ -1201,7 +1201,7 @@ the end of the user input, delete to end of input."
 
 (when (eq 'ns window-system)
   (global-set-key [ns-drag-file] 'ns-find-file))
-(global-set-key [?\C-w] 'pt-kill-region)
+(global-set-key [?\C-w] 'pt-kill-region-or-line)
 (global-set-key (kbd "M-`") 'pt-switch-buffer)
 (global-set-key [?\M-\\] 'pt-hungry-delete)
 (global-set-key (kbd "M-]") 'end-of-defun)
