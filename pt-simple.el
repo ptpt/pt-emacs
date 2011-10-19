@@ -74,6 +74,7 @@
   "Function that returns a color theme.")
 
 (defvar pt-binary-range '(0 . 0))
+
 
 ;;; functions
 (defadvice message (around pt-inhibit-message compile)
@@ -93,8 +94,7 @@
     (setq cursor-type old-cursor-type)))
 
 (defmacro pt-get-directory-create (dir)
-  "Create directory DIR if not found.
-Return DIR."
+  "Create directory DIR if not found. Return DIR."
   `(progn (unless (file-directory-p ,dir)
             (make-directory ,dir t))
           ,dir))
@@ -120,8 +120,6 @@ If DIR is nil, add `user-emacs-directory' instead."
                         (font-get (font-spec :name font) :family))
                        (font-family-list)))
              pt-fonts)))
-
-
 
 (defun pt-set-font (&optional font)
   "Figure out and install which font and size I use on this system.
@@ -165,11 +163,10 @@ current second."
         (remove color-theme pt-color-theme-list))
       (setq pt-color-theme-list nil))))
 
-;; (add-hook 'emacs-startup-hook #'pt-set-color-theme)
 (add-hook 'window-setup-hook
           #'(lambda ()
-              (if window-system
-                  (pt-set-color-theme))))
+              (when window-system
+                (pt-set-color-theme))))
 
 (defun pt-tab-command (&optional arg)
   "If mark is active, indent the region, otherwise run
@@ -313,7 +310,7 @@ current lines using `pt-delete-lines'."
       (buffer-name buffer)))
 
 (defmacro pt-xor (a b)
-  "xor logic operation."
+  "XOR logic operation."
   `(and (or ,a ,b) (not (and ,a ,b))))
 
 (defun pt-next-buffer (&optional arg)
@@ -420,7 +417,6 @@ non-file-visted-buffer."
           (set-visited-file-name new-name)
           (set-buffer-modified-p nil))))))
 
-;; from internet
 (defun pt-delete-this-buffer-and-file ()
   "Removes file connected to current buffer and kills buffer."
   (interactive)
@@ -506,6 +502,7 @@ that are needed to create."
             (cons (progn (make-directory dir) (file-name-as-directory dir)) nil))))
 
 (defadvice save-buffer (around pave-path activate)
+  "Pave the path before save buffer"
   (if (and (not (buffer-file-name))
            (called-interactively-p 'any))
       (condition-case err
@@ -674,8 +671,6 @@ the end of the user input, delete to end of input."
     (kill-line arg)))
 
 ;; get rid of the annoying error message "text is read-only"
-
-;; get rid of the annoying error message "text is read-only"
 (defun pt-minibuffer-delete-backward-char (&optional arg)
   (interactive "p")
   (unless (get-text-property (- (point) 1) 'read-only)
@@ -692,7 +687,9 @@ the end of the user input, delete to end of input."
 
 
 ;;; global key bindings
-;; ;; fix A-o binding to iso char problem in emacs 23.x
+(global-set-key [?\C-k] 'pt-kill-line)
+
+;; fix A-o binding to iso char problem in emacs 23.x
 (eval-after-load "iso-transl"
   '(progn
      (define-key key-translation-map [?\A-o] nil)
@@ -700,10 +697,12 @@ the end of the user input, delete to end of input."
      (define-key key-translation-map [?\A-m] nil)
      (define-key key-translation-map [?\A-u] nil)
      (define-key key-translation-map [?\A-x] nil)))
+
 (add-hook 'ido-setup-hook
           #'(lambda ()
               (define-key ido-common-completion-map (kbd "TAB") 'ido-next-match)
               (define-key ido-common-completion-map (kbd "M-TAB") 'ido-prev-match)))
+
 (add-hook 'ido-setup-hook
           #'(lambda ()
               (define-key
@@ -737,8 +736,8 @@ the end of the user input, delete to end of input."
                                 (if (equal 1 (length (visible-frame-list)))
                                     (kill-this-buffer)
                                   (delete-frame))))
-  (global-set-key [?\A-`] 'other-frame)
-  (global-set-key [?\A-/] 'comment-or-uncomment-region))
+  (global-set-key [(alt \`)] 'other-frame)
+  (global-set-key [(alt /)] 'comment-or-uncomment-region))
 
 (global-set-key [f2] ctl-x-map)
 
