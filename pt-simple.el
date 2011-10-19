@@ -405,7 +405,7 @@ non-file-visted-buffer."
   (global-set-key [?\C-x ?\M-w] 'pt-pbcopy))
 
 ;; from internet
-(defun pt-rename-file-and-buffer (new-name)
+(defun pt-rename-this-file-and-buffer (new-name)
   "Renames both current buffer and file it's visiting to NEW-NAME."
   (interactive "sNew name: ")
   (let ((name (buffer-name))
