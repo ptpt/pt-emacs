@@ -200,9 +200,9 @@ But if current line is not blank, it will `kill-whole-line'."
     (if thisblank
         (delete-blank-lines)
       (let ((col (current-column)))
-        (save-excursion
-          (move-beginning-of-line 1)
-          (kill-whole-line arg))
+        (kill-whole-line arg)
+        (let ((kill (current-kill 0 t)))
+          (kill-new (replace-regexp-in-string "^[\\t ]*\\|[\\t ]*$" "" kill)))
         (move-to-column col)))))
 
 (defun pt-kill-region-or-line (&optional arg)
