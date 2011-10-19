@@ -647,7 +647,7 @@ the end of the user input, delete to end of input."
           (split-window))
       (switch-to-buffer (other-buffer (current-buffer) t)))))
 
-(defun shrink-frame-if-larger-than-buffer (&optional frame)
+(defun shrink-frame-to-fit-buffer (&optional frame)
   (interactive)
   (when (null frame)
     (setq frame (selected-frame)))
