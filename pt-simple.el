@@ -32,48 +32,11 @@
 
 
 ;; variables
-(defvar pt-ido-recentf-list nil
-  "internal use")
-
-(defvar pt-emacs-tmp-directory "~/.emacs.tmp/"
-  "Directory path that stores temporary files like auto-save files, backups
-  etc.")
-
-(defvar pt-fonts nil
-  "Fonts list, in decreasing order of preference.")
-
-(defvar pt-new-buffer-hook nil
-  "List of functions to be called after a new buffer is created by
-  `pt-new-buffer'.")
 
 (defvar pt-ignored-buffers
   '("*Help*" "*Completions*" "*Diff*" "*Messages*"
     "*Buffer List*" "*Apropos*")
   "Skip buffers in the list when `pt-next-buffer' and `pt-previous-buffer'.")
-
-(defvar pt-new-buffer-mode-alist nil
-  "When create new buffer with prefix arg, the new buffer will use the
-  mode corresponding to the arg in this list as major mode.")
-
-(defvar pt-color-theme-list nil
-  "Color theme list.")
-
-(defvar pt-find-font-function #'pt-find-font
-  "Function for finding font.")
-
-(defvar pt-new-buffer-is-me nil
-  "Non-nil means the buffer was created by `pt-new-buffer'. This kind of
-  buffer will serve as a special buffer, e.g. Killing this buffer will
-  be asked. It's for internal use and will be set automatically")
-
-(put 'pt-new-buffer-is-me 'permanent-local t)
-(make-variable-buffer-local 'pt-new-buffer-is-me)
-
-(defvar pt-choose-color-theme-function
-  'pt-choose-color-theme-by-second
-  "Function that returns a color theme.")
-
-(defvar pt-binary-range '(0 . 0))
 
 
 ;;; functions
@@ -93,7 +56,7 @@
     ad-do-it
     (setq cursor-type old-cursor-type)))
 
-(defmacro pt-get-directory-create (dir)
+(defmacro pt-make-directory-and-return (dir)
   "Create directory DIR if not found. Return DIR."
   `(progn (unless (file-directory-p ,dir)
             (make-directory ,dir t))
@@ -111,6 +74,12 @@ If DIR is nil, add `user-emacs-directory' instead."
   "Return t if two directory pathes are same."
   `(string-equal (downcase (file-name-as-directory (file-truename (expand-file-name ,f1))))
                  (downcase (file-name-as-directory (file-truename (expand-file-name ,f2))))))
+
+(defvar pt-find-font-function #'pt-find-font
+  "Function for finding font.")
+
+(defvar pt-fonts nil
+  "Fonts list, in decreasing order of preference.")
 
 (defun pt-find-font ()
   "Return the first available font listed in `pt-fonts'."
@@ -132,6 +101,9 @@ If called interactively, prompts the user for the font and size to use."
       (add-to-list 'default-frame-alist (cons 'font font))
       (set-frame-font font))))
 
+(defvar pt-color-theme-list nil
+  "Color theme list.")
+
 (defun pt-choose-color-theme-by-second ()
   "Choose a valid color theme in `pt-color-theme-list' according to
 current second."
@@ -141,6 +113,10 @@ current second."
             (length pt-color-theme-list))
        pt-color-theme-list)
     nil))
+
+(defvar pt-choose-color-theme-function
+  'pt-choose-color-theme-by-second
+  "Function that returns a color theme.")
 
 (defun pt-set-color-theme ()
   "Set color theme by `pt-choose-color-theme-function'."
@@ -181,6 +157,8 @@ current second."
          (indent-for-tab-command arg))
         (t (dabbrev-expand arg))))
 
+(global-set-key (kbd "TAB") 'pt-tab-command)
+
 (defun pt-beginning-of-line-or-text ()
   "Switch position between beginning of line and text."
   (interactive)
@@ -213,6 +191,8 @@ current lines using `pt-delete-lines'."
       (kill-region (mark) (point))
     (pt-delete-lines arg)))
 
+(global-set-key [?\C-w] 'pt-kill-region-or-line)
+
 (defun pt-keyboard-quit ()
   "Delete all windows that match `pt-ignored-buffers' and then call `keyboard-quit'"
   (interactive)
@@ -222,6 +202,8 @@ current lines using `pt-delete-lines'."
                   (delete-window window))))
         pt-ignored-buffers)
   (keyboard-quit))
+
+(global-set-key [escape] 'pt-keyboard-quit)
 
 (defmacro pt-defun-treat-current-line-as-region (orig-function)
   `(defun ,(intern (concat "pt-" (symbol-name (eval orig-function)))) (&optional arg)
@@ -255,6 +237,9 @@ current lines using `pt-delete-lines'."
     (when (/= here (point))
       (delete-region (point) here))))
 
+(when window-system
+  (global-set-key [C-backspace] 'pt-hungry-delete-backwards))
+
 (defun pt-hungry-delete-forwards ()
   "Delete forwards whitespaces."
   (interactive)
@@ -270,6 +255,24 @@ current lines using `pt-delete-lines'."
           (looking-back "[^ \t\n\r\f\v]"))
       (pt-hungry-delete-forwards)
     (pt-hungry-delete-backwards)))
+
+(global-set-key [?\M-\\] 'pt-hungry-delete)
+
+(defvar pt-new-buffer-hook nil
+  "List of functions to be called after a new buffer is created by
+  `pt-new-buffer'.")
+
+(defvar pt-new-buffer-mode-alist nil
+  "When create new buffer with prefix arg, the new buffer will use the
+  mode corresponding to the arg in this list as major mode.")
+
+(defvar pt-new-buffer-is-me nil
+  "Non-nil means the buffer was created by `pt-new-buffer'. This kind of
+  buffer will serve as a special buffer, e.g. Killing this buffer will
+  be asked. It's for internal use and will be set automatically")
+
+(put 'pt-new-buffer-is-me 'permanent-local t)
+(make-variable-buffer-local 'pt-new-buffer-is-me)
 
 (defun pt-new-buffer (&optional arg)
   "Create a new buffer."
@@ -291,6 +294,9 @@ current lines using `pt-delete-lines'."
                  (= 4 (car arg))))
         (run-hooks 'pt-new-buffer-hook))
     (set-buffer-modified-p nil)))
+
+(define-key ctl-x-map [?\C-n] 'pt-new-buffer)
+(global-set-key [(alt n)] 'pt-new-buffer)
 
 (defun pt-new-buffer-query-funtion ()
   (if (and pt-new-buffer-is-me
@@ -355,6 +361,8 @@ non-file-visted-buffer."
       (end-of-buffer arg)
     (beginning-of-buffer arg)))
 
+(global-set-key [?\C-a] 'pt-beginning-of-line-or-text)
+
 (defun pt-forward-whitespace (&optional arg)
   "Move point forward whitespace."
   (interactive "p")
@@ -373,6 +381,9 @@ non-file-visted-buffer."
   (unless (bobp)
     (forward-char)))
 
+(global-set-key (kbd "M-e") 'pt-forward-whitespace)
+(global-set-key (kbd "M-a") 'pt-backward-whitespace)
+
 (defadvice kill-this-buffer
   (after pt-kill-this-buffer-and-switch-to-next-buffer
          activate)
@@ -385,15 +396,17 @@ non-file-visted-buffer."
   (defun pt-pbpaste ()
     "Paste data from pasteboard."
     (interactive)
-    (shell-command-on-region
-     (point)
-     (if mark-active (mark) (point))
-     "pbpaste" nil t))
+    (when (executable-find "pbpaste")
+      (shell-command-on-region
+       (point)
+       (if mark-active (mark) (point))
+       "pbpaste" nil t)))
 
   (defun pt-pbcopy ()
     "Copy region to pasteboard."
     (interactive)
-    (when mark-active
+    (when (and mark-active
+               (executable-find "pbcopy"))
       (shell-command-on-region
        (point) (mark) "pbcopy")
       (kill-buffer "*Shell Command Output*")))
@@ -440,7 +453,6 @@ non-file-visted-buffer."
          (setq cursor-type (default-value 'cursor-type))
          (blink-cursor-mode 1))))
 
-;; window settings
 (defun pt-split-window ()
   "Split window into 2 windows with different buffers."
   (interactive)
@@ -483,26 +495,30 @@ non-file-visted-buffer."
            (set-window-start w2 s1))))
   (other-window 1))
 
-(defun pt-delete-directory-recursion (dir)
+(define-key ctl-x-map "2" 'pt-split-window)
+(define-key ctl-x-map "3" 'pt-split-window-horizontally)
+(define-key ctl-x-map "7" 'pt-swap-windows)
+
+(defun pt-delete-directory (dir)
   "Delete empty directories recursively."
   (let ((dirs (directory-files dir t "\\`[^.]")))
     (cond ((and (= 1(length dirs))
                 (file-directory-p (car dirs)))
-           (and (pt-delete-directory-recursion (car dirs))
+           (and (pt-delete-directory (car dirs))
                 (or (delete-directory dir) t)))
           ((= 0 (length dirs))
            (delete-directory dir) t)
           (t nil))))
 
-(defun pt-get-directory-create-recursively (dir)
-  "Create directory DIR and return the a list of all parent directories
-that are needed to create."
+(defun pt-make-directory-and-return-parents (dir)
+  "Create directory DIR and its parent directories.
+Return a list of the new created directories."
   (unless (file-exists-p dir)
-    (append (pt-get-directory-create-recursively (expand-file-name ".." dir))
+    (append (pt-make-directory-and-return-parents (expand-file-name ".." dir))
             (cons (progn (make-directory dir) (file-name-as-directory dir)) nil))))
 
 (defadvice save-buffer (around pave-path activate)
-  "Pave the path before save buffer"
+  "Pave the path of the visited file before save buffer"
   (if (and (not (buffer-file-name))
            (called-interactively-p 'any))
       (condition-case err
@@ -510,18 +526,20 @@ that are needed to create."
         (error
          (let ((filename (and (listp file-name-history)
                               (car file-name-history))))
-           (if (and (string-match "\\(.*\\): no such directory\\'" (cadr err))
-                    (stringp filename)
+           (if (and (stringp filename)
+                    (string-match "\\(.*\\): no such directory\\'" (cadr err))
                     (string-equal (match-string 1 (cadr err))
                                   (file-name-directory (expand-file-name filename)))
-                    (y-or-n-p (format "%s; create? " (cadr err))))
-               (let* ((dirs (pt-get-directory-create-recursively
+                    (y-or-n-p (format "%s; save create? " (cadr err))))
+               ;; now, the parent directory has been created
+               (let* ((dirs (pt-make-directory-and-return-parents
                              (file-name-directory filename)))
                       (buffer-name (buffer-name)))
                  (condition-case err2
                      (progn (set-visited-file-name filename)
                             ad-do-it)
                    (error
+                    ;; recover buffer
                     (set-visited-file-name nil)
                     (rename-buffer buffer-name)
                     (mapc 'delete-directory (reverse dirs))
@@ -529,12 +547,14 @@ that are needed to create."
              (signal (car err) (cdr err))))))
     ad-do-it))
 
-(add-hook 'write-file-functions ;; create file when the file doesn't exist
+(add-hook 'write-file-functions
           #'(lambda ()
               (let ((dir (file-name-directory (buffer-file-name))))
                 (and (not (file-directory-p dir))
                      (y-or-n-p (format "%s: no such directory; create? " dir))
                      (make-directory dir t)))))
+
+(defvar pt-binary-range '(0 . 0))
 
 (defun pt-binary-previous-line (&optional arg)
   (interactive "P")
@@ -572,7 +592,41 @@ that are needed to create."
     (setcar pt-binary-range (+ (car pt-binary-range) lines))
     (next-line lines)))
 
-(defun pt-ido-kill-recentf-at-head ()
+(global-set-key [?\M-p] 'pt-binary-previous-line)
+(global-set-key [?\M-n] 'pt-binary-next-line)
+
+(defvar pt-ido-recentf-list nil)
+
+(defun pt-ido-find-recentf ()
+  "Find recently opened files using ido-mode."
+  (interactive)
+  (if (fboundp 'pt-inhibit-message)
+      (pt-inhibit-message
+       (recentf-cleanup)))
+  (setq pt-ido-recentf-list nil)
+  (let (records suffix)
+    (dolist (file recentf-list)
+      (let* ((f (file-name-nondirectory file))
+             (match (assoc f records)))
+        (if match
+            (setcdr match (1+ (cdr match)))
+          (add-to-list 'records (cons f 1)))
+        (setq suffix
+              (if (cdr match)
+                  (format "<%d>" (cdr match))
+                ""))
+        (add-to-list 'pt-ido-recentf-list
+                     (cons (concat f suffix) file) t))))
+  (let ((filename
+         (ido-completing-read
+          "Open recent: "
+          (mapcar 'car pt-ido-recentf-list)
+          nil t)))
+    (let ((filename (assoc filename pt-ido-recentf-list)))
+      (when filename
+        (find-file (cdr filename))))))
+
+(defun pt-ido-kill-recentf ()
   "Kill the recent file at the head of `ido-matches'
 and remove it from `recentf-list'. If cursor is not at
 the end of the user input, delete to end of input."
@@ -589,54 +643,32 @@ the end of the user input, delete to end of input."
         (setq ido-cur-list
               (delq file ido-cur-list))))))
 
-(defun pt-recentf-ido-find-file ()
-  "Find recently opened files using ido-mode."
-  (interactive)
-  (if (fboundp 'pt-inhibit-message)
-      (pt-inhibit-message
-       (recentf-cleanup)))
-  (setq pt-ido-recentf-list nil)
-  (let (records suffix)
-    (dolist (file recentf-list)
-      (let* ((f (file-name-nondirectory file))
-             (match (assoc f records)))
-        (if match
-            (setcdr match (1+ (cdr match)))
-          (add-to-list 'records
-                       (cons f 1)))
-        (setq suffix
-              (if (cdr match)
-                  (format "<%d>" (cdr match))
-                ""))
-        (add-to-list 'pt-ido-recentf-list
-                     (cons (concat f suffix) file)
-                     t))))
-  (let ((filename
-         (ido-completing-read
-          "Open recent: "
-          (mapcar 'car pt-ido-recentf-list)
-          nil t)))
-    (let ((filename (assoc filename pt-ido-recentf-list)))
-      (when filename
-        (find-file (cdr filename))))))
+(add-hook 'ido-setup-hook
+          #'(lambda ()
+              (define-key ido-common-completion-map [?\C-k] 'pt-ido-kill-recentf)))
+(define-key ctl-x-map "\C-r" 'pt-ido-find-recentf)
 
-(defun capitalize-word-or-region (&optional arg)
+(defun pt-capitalize-word-or-region (&optional arg)
   (interactive "p")
   (if mark-active
       (capitalize-region (mark) (point))
     (capitalize-word arg)))
 
-(defun upcase-word-or-region (&optional arg)
+(defun pt-upcase-word-or-region (&optional arg)
   (interactive "p")
   (if mark-active
       (upcase-region (mark) (point))
     (upcase-word arg)))
 
-(defun downcase-word-or-region (&optional arg)
+(defun pt-downcase-word-or-region (&optional arg)
   (interactive "p")
   (if mark-active
       (downcase-region (mark) (point))
     (downcase-word arg)))
+
+(global-set-key [?\M-c] 'pt-capitalize-word-or-region)
+(global-set-key [?\M-u] 'pt-upcase-word-or-region)
+(global-set-key [?\M-l] 'pt-downcase-word-or-region)
 
 (defun pt-switch-buffer (&optional arg)
   (interactive "P")
@@ -647,7 +679,9 @@ the end of the user input, delete to end of input."
           (split-window))
       (switch-to-buffer (other-buffer (current-buffer) t)))))
 
-(defun shrink-frame-to-fit-buffer (&optional frame)
+(global-set-key (kbd "M-`") 'pt-switch-buffer)
+
+(defun pt-shrink-frame-to-fit-buffer (&optional frame)
   (interactive)
   (when (null frame)
     (setq frame (selected-frame)))
@@ -662,162 +696,14 @@ the end of the user input, delete to end of input."
         (set-frame-height frame height))
       (delete-other-windows window))))
 
-(defun pt-kill-line (&optional arg)
-  (interactive "P")
-  (if (looking-at "\n")
-      (progn (kill-line arg)
-             (delete-region (point) (progn (skip-chars-forward " \t")
-                                           (point))))
-    (kill-line arg)))
-
 ;; get rid of the annoying error message "text is read-only"
 (defun pt-minibuffer-delete-backward-char (&optional arg)
   (interactive "p")
   (unless (get-text-property (- (point) 1) 'read-only)
     (delete-backward-char arg)))
 
-(global-set-key [?\C-k] 'pt-kill-line)
 (define-key minibuffer-local-map [backspace]
   'pt-minibuffer-delete-backward-char)
-
-
-;;; global key bindings
-(global-set-key [?\C-k] 'pt-kill-line)
-
-;; fix A-o binding to iso char problem in emacs 23.x
-(eval-after-load "iso-transl"
-  '(progn
-     (define-key key-translation-map [?\A-o] nil)
-     (define-key key-translation-map [?\A-c] nil)
-     (define-key key-translation-map [?\A-m] nil)
-     (define-key key-translation-map [?\A-u] nil)
-     (define-key key-translation-map [?\A-x] nil)))
-
-(add-hook 'ido-setup-hook
-          #'(lambda ()
-              (define-key ido-common-completion-map (kbd "TAB") 'ido-next-match)
-              (define-key ido-common-completion-map (kbd "M-TAB") 'ido-prev-match)))
-
-(add-hook 'ido-setup-hook
-          #'(lambda ()
-              (define-key
-                ido-common-completion-map [?\C-k]
-                'pt-ido-kill-recentf-at-head)))
-
-(define-key ctl-x-map "\C-r" 'pt-recentf-ido-find-file)
-
-(when (eq window-system 'ns)
-  (global-set-key [(alt p)] 'print-buffer)
-  (global-set-key [(alt q)] 'save-buffers-kill-emacs)
-  (global-set-key [(alt z)] 'undo)
-  (global-set-key [(alt shift z)] 'redo) ; requires redo+
-  (global-set-key [(alt x)] 'clipboard-kill-region)
-  (global-set-key [(alt c)] 'clipboard-kill-ring-save)
-  (global-set-key [(alt v)] 'clipboard-yank)
-  (global-set-key [(alt a)] 'mark-whole-buffer)
-  (global-set-key [(alt f)] 'isearch-forward)
-  (global-set-key [(alt meta f)] 'occur)
-  (global-set-key [(alt g)] 'isearch-repeat-forward)
-  (global-set-key [(alt shift g)] 'isearch-repeat-backward)
-  (global-set-key [(alt l)] 'goto-line)
-  (global-set-key [(alt m)] 'toggle-maxframe)
-  (global-set-key [(alt s)] 'save-buffer)
-  (global-set-key [(alt w)] 'delete-frame)
-  (global-set-key [(alt o)] 'find-file)
-  (global-set-key [(alt b)] 'ido-switch-buffer)
-  (global-set-key [(alt q)] 'save-buffers-kill-emacs)
-  (global-set-key [(alt w)] #'(lambda ()
-                                (interactive)
-                                (if (equal 1 (length (visible-frame-list)))
-                                    (kill-this-buffer)
-                                  (delete-frame))))
-  (global-set-key [(alt \`)] 'other-frame)
-  (global-set-key [(alt /)] 'comment-or-uncomment-region))
-
-(global-set-key [f2] ctl-x-map)
-
-;; window bindings
-(define-key ctl-x-map "2" 'pt-split-window)
-(define-key ctl-x-map "3" 'pt-split-window-horizontally)
-(winner-mode 1)
-(define-key ctl-x-map "7" 'pt-swap-windows)
-(define-key ctl-x-map "9" 'winner-undo)
-
-(when (eq 'ns window-system)
-  (global-set-key [?\A-n] 'pt-new-buffer)
-  (global-set-key [?\A-\M-,]
-                  #'(lambda ()
-                      (interactive)
-                      (find-file user-init-file))))
-
-(global-set-key [f1 ?j] 'elisp-index-search)
-(global-set-key (kbd "TAB") 'pt-tab-command)
-(global-set-key [?\M-m] 'set-mark-command)
-(when (fboundp 'cua-set-rectangle-mark)
-  (global-set-key (kbd "M-M") 'cua-set-rectangle-mark))
-(global-set-key [?\C-a] 'pt-beginning-of-line-or-text)
-(global-set-key (kbd "RET") 'newline-and-indent)
-(global-set-key [?\M-p] 'pt-binary-previous-line)
-(global-set-key [?\M-n] 'pt-binary-next-line)
-(global-set-key [escape] 'pt-keyboard-quit)
-(define-key ctl-x-map [escape] 'keyboard-quit)
-
-(autoload 'dired-jump "dired-x" "Jump to dired corresponding current buffer.")
-(autoload 'dired-jump-other-window "dired-x"
-  "jump to dired corresponding current buffer in other window.")
-(global-set-key [?\C-x ?\C-d] 'dired-jump-other-window)
-
-(global-set-key (kbd "C-j")
-                #'(lambda ()
-                    (interactive)
-                    (end-of-line)
-                    (newline-and-indent)))
-
-(global-set-key (kbd "M-j")
-                #'(lambda ()
-                    (interactive)
-                    (beginning-of-line)
-                    (split-line)))
-
-(define-key ctl-x-map [?\C-g] 'keyboard-quit)
-(define-key ctl-x-map "k" 'kill-this-buffer)
-(define-key ctl-x-map "f" 'find-file)
-
-;; smartly comment or uncomment line/region
-(define-key ctl-x-map (kbd "/") 'comment-or-uncomment-region)
-(define-key ctl-x-map "l" 'find-library)
-(define-key ctl-x-map (kbd "M-m") 'pop-global-mark)
-(define-key ctl-x-map [f2] 'other-window)
-(define-key ctl-x-map [?p] 'pop-to-mark-command)
-(define-key ctl-x-map [?\C-n] 'pt-new-buffer)
-
-(when (eq 'ns window-system)
-  (global-set-key [ns-drag-file] 'ns-find-file))
-(global-set-key [?\C-w] 'pt-kill-region-or-line)
-(global-set-key (kbd "M-`") 'pt-switch-buffer)
-(global-set-key [?\M-\\] 'pt-hungry-delete)
-(global-set-key (kbd "M-]") 'end-of-defun)
-(global-set-key (kbd "M-[") 'beginning-of-defun)
-(add-hook 'Info-mode-hook
-          #'(lambda ()(define-key Info-mode-map (kbd "M-n") nil)))
-
-(when window-system
-  (global-set-key [C-backspace] 'pt-hungry-delete-backwards))
-
-(global-set-key (kbd "M-a") 'pt-backward-whitespace)
-(global-set-key (kbd "M-e") 'pt-forward-whitespace)
-
-(global-set-key [M-right] 'windmove-right)
-(global-set-key [M-left] 'windmove-left)
-(global-set-key [M-up] 'windmove-up)
-(global-set-key [M-down] 'windmove-down)
-
-(define-key ctl-x-map "t" 'ansi-term)
-(global-set-key [?\C-x ?\C-b] 'electric-buffer-list)
-
-(global-set-key [?\M-u] 'upcase-word-or-region)
-(global-set-key [?\M-l] 'downcase-word-or-region)
-(global-set-key [?\M-c] 'capitalize-word-or-region)
 
 (provide 'pt-simple)
 ;; pt-simple ends here
