@@ -75,74 +75,15 @@ If DIR is nil, add `user-emacs-directory' instead."
   `(string-equal (downcase (file-name-as-directory (file-truename (expand-file-name ,f1))))
                  (downcase (file-name-as-directory (file-truename (expand-file-name ,f2))))))
 
-(defvar pt-find-font-function #'pt-find-font
-  "Function for finding font.")
-
-(defvar pt-fonts nil
-  "Fonts list, in decreasing order of preference.")
-
-(defun pt-find-font ()
-  "Return the first available font listed in `pt-fonts'."
-  (let ((family-list (font-family-list)))
-    (find-if (lambda (font)
-               (member (symbol-name
-                        (font-get (font-spec :name font) :family))
-                       (font-family-list)))
-             pt-fonts)))
-
 (defun pt-set-font (&optional font)
-  "Figure out and install which font and size I use on this system.
-If called interactively, prompts the user for the font and size to use."
+  "Like `set-frame-font', in addition to set font of the current frame, it
+also set font for new frames."
   (interactive
    (list (completing-read (format "Font: ")
                           (font-family-list))))
-  (let* ((font (or font (funcall pt-find-font-function))))
-    (when font
-      (add-to-list 'default-frame-alist (cons 'font font))
-      (set-frame-font font))))
-
-(defvar pt-color-theme-list nil
-  "Color theme list.")
-
-(defun pt-choose-color-theme-by-second ()
-  "Choose a valid color theme in `pt-color-theme-list' according to
-current second."
-  (if pt-color-theme-list
-      (nth
-       (mod (car (decode-time (current-time)))
-            (length pt-color-theme-list))
-       pt-color-theme-list)
-    nil))
-
-(defvar pt-choose-color-theme-function
-  'pt-choose-color-theme-by-second
-  "Function that returns a color theme.")
-
-(defun pt-set-color-theme ()
-  "Set color theme by `pt-choose-color-theme-function'."
-  (interactive)
-  (let ((pt-color-theme-list pt-color-theme-list) color-theme)
-    (while pt-color-theme-list
-      (setq color-theme
-            (funcall (or pt-choose-color-theme-function 'ignore)))
-      (if (condition-case nil
-              (progn (cond
-                      ((listp color-theme)
-                       (eval color-theme))
-                      ((symbolp color-theme)
-                       (require color-theme)
-                       (funcall color-theme))
-                      (t (error "Color theme not found")))
-                     t)
-            (error nil))
-          (setq pt-color-theme-list nil)
-        (remove color-theme pt-color-theme-list))
-      (setq pt-color-theme-list nil))))
-
-(add-hook 'window-setup-hook
-          #'(lambda ()
-              (when window-system
-                (pt-set-color-theme))))
+  (when font
+    (add-to-list 'default-frame-alist (cons 'font font))
+    (set-frame-font font)))
 
 (defun pt-tab-command (&optional arg)
   "If mark is active, indent the region, otherwise run
