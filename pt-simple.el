@@ -36,7 +36,7 @@
 (defvar pt-ignored-buffers
   '("*Help*" "*Completions*" "*Diff*" "*Messages*"
     "*Buffer List*" "*Apropos*")
-  "Skip buffers in the list when `pt-next-buffer' and `pt-previous-buffer'.")
+  "Skip the buffers when `pt-next-buffer' and `pt-previous-buffer'.")
 
 
 ;;; functions
@@ -107,6 +107,8 @@ also set font for new frames."
     (back-to-indentation)
     (when (= pt (point))
       (move-beginning-of-line nil))))
+
+(global-set-key [?\C-a] 'pt-beginning-of-line-or-text)
 
 (defun pt-delete-lines (&optional arg)
   "Delete lines like `delete-blank-lines'.
@@ -301,8 +303,6 @@ non-file-visted-buffer."
   (if (bobp)
       (end-of-buffer arg)
     (beginning-of-buffer arg)))
-
-(global-set-key [?\C-a] 'pt-beginning-of-line-or-text)
 
 (defun pt-forward-whitespace (&optional arg)
   "Move point forward whitespace."
