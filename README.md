@@ -1,6 +1,6 @@
 **pt-emacs** redefines some of my frequently-used commands as well as
-provides some useful commands. In a word, **pt-emacs**
-makes my Emacs better.
+provides some useful commands. In a word, **pt-emacs** makes the Emacs
+better.
 
 To install this package:
 
