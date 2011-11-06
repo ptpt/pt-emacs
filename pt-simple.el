@@ -1,8 +1,8 @@
 ;;; pt-simple.el --- Tao Peng's basic configuration for Emacs
 
-;; Copyright (C) 2010, 2011 Tao Peng <pt@taopeng.me>
+;; Copyright (C) 2010, 2011 Tao Peng <ptpttt@gmail.com>
 
-;; Author:   Tao Peng <pt@taopeng.me>
+;; Author:   Tao Peng <ptpttt@gmail.com>
 ;; Keywords: local
 
 ;; This file is NOT part of GNU Emacs.
