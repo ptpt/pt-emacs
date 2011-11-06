@@ -1,53 +1,8 @@
-* Installation
-1) Place all these files under ~/.emacs.d/
-2) Add the following lines to your ~/.emacs
+**pt-emacs** is a Emacs package that redefines some frequently-used
+commands as well as provides some useful commands to default Emacs. In a
+word, **pt-emacs** makes the Emacs better.
 
-#+BEGIN_SRC emacs-lisp
-   (add-to-path 'load-path "~/.emacs.d/")
-   (require 'pt-simple)
-#+END_SRC
-* Key Bindings
-** Global key bindings
+To install this package:
 
-| key              | command                        |
-|------------------+--------------------------------|
-| <tab>            | pt-tab-command                 |
-| [escape]         | keyboard-quit                  |
-| [f1] j           | elisp-index-search             |
-| [f2] [f2]        | other-window                   |
-| C-a              | pt-beginning-of-line-or-text   |
-| C-w              | pt-kill-region                 |
-| C-x /            | comment-or-uncomment-region    |
-| C-x 2            | pt-split-window                |
-| C-x 3            | pt-split-window-horizontally   |
-| C-x 7            | pt-swap-windows                |
-| C-x 9            | winner-undo                    |
-| C-x <left>       | pt-previous-buffer             |
-| C-x C-b          | ido-switch-buffer-other-window |
-| C-x C-d          | dired-jump-other-window        |
-| C-x C-n          | pt-new-buffer                  |
-| C-x k            | kill-this-buffer               |
-| C-x l            | find-library                   |
-| C-x M-m          | pop-global-mark                |
-| M-<down>         | windmove-down                  |
-| M-<left>         | windmove-left                  |
-| M-<right>        | windmove-right                 |
-| M-<up>           | windmove-up                    |
-| M-[              | beginning-of-defun             |
-| M-\              | pt-hungry-delete               |
-| M-]              | end-of-defun                   |
-| M-`, C-x <right> | pt-next-buffer                 |
-| M-a              | pt-backward-whitespace         |
-| M-e              | pt-forward-whitespace          |
-| M-n              | forward-paragraph              |
-| M-p              | backward-paragraph             |
-| RET              | newline-and-indent             |
-
-
-** Mac OS
-
-| key | command            |
-|-----+--------------------|
-| A-m | pt-toggle-maxframe |
-| A-r | pt-run-python      |
-| A-w | delete-frame       |
+1.  Download `pt-simple.el`
+2.  Add `(require 'pt-simple)` to your `~/.emacs`
