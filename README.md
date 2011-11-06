@@ -1,6 +1,6 @@
-**pt-emacs** is a Emacs package that redefines some frequently-used
-commands as well as provides some useful commands to default Emacs. In a
-word, **pt-emacs** makes the Emacs better.
+**pt-emacs** redefines some of my frequently-used commands as well as
+provides some useful commands. In a word, **pt-emacs**
+makes my Emacs better.
 
 To install this package:
 
