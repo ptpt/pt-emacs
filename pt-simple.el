@@ -62,13 +62,12 @@
             (make-directory ,dir t))
           (file-name-as-directory ,dir)))
 
-(defun pt-add-subdirectories-to-list (&optional dir)
-  "Add all subdirectories not starting with \".\" of DIR to `load-path'.
-If DIR is nil, add `user-emacs-directory' instead."
+(defun pt-add-subdirectories-to-list (dir)
+  "Add all subdirectories not starting with \".\" of DIR to `load-path'."
   (mapc #'(lambda (file)
             (if (file-directory-p file)
                 (add-to-list 'load-path file)))
-        (directory-files (or dir user-emacs-directory) t "\\`[^.]")))
+        (directory-files dir t "\\`[^.]")))
 
 (defmacro pt-same-file-p (f1 f2)
   "Return t if two directory pathes are same."
