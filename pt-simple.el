@@ -171,6 +171,14 @@ current lines using `pt-delete-lines'."
         clipboard-kill-region
         clipboard-kill-ring-save))
 
+(defun pt-set-mark-or-copy-region (&optional arg)
+  (interactive "P")
+  (if mark-active
+      (kill-ring-save (point) (mark)))
+  (funcall (or (command-remapping 'set-mark-command) 'set-mark-command) arg))
+
+(global-set-key [?\M-w] 'pt-set-mark-or-copy-region)
+
 (defun pt-hungry-delete-backwards ()
   "Delete backwards whitespaces."
   (interactive)
