@@ -56,11 +56,11 @@
     ad-do-it
     (setq cursor-type old-cursor-type)))
 
-(defmacro pt-make-directory-and-return (dir)
+(defmacro pt-get-directory-create (dir)
   "Create directory DIR if not found. Return DIR."
-  `(progn (unless (file-directory-p ,dir)
+  `(progn (unless (file-exists-p ,dir)
             (make-directory ,dir t))
-          ,dir))
+          (file-name-as-directory ,dir)))
 
 (defun pt-add-subdirectories-to-list (&optional dir)
   "Add all subdirectories not starting with \".\" of DIR to `load-path'.
