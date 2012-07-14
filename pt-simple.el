@@ -534,59 +534,6 @@ Return a list of the new created directories."
 (global-set-key [?\M-p] 'pt-binary-previous-line)
 (global-set-key [?\M-n] 'pt-binary-next-line)
 
-(defvar pt-ido-recentf-list nil)
-
-(defun pt-ido-find-recentf ()
-  "Find recently opened files using ido-mode."
-  (interactive)
-  (if (fboundp 'pt-inhibit-message)
-      (pt-inhibit-message
-       (recentf-cleanup)))
-  (setq pt-ido-recentf-list nil)
-  (let (records suffix)
-    (dolist (file recentf-list)
-      (let* ((f (file-name-nondirectory file))
-             (match (assoc f records)))
-        (if match
-            (setcdr match (1+ (cdr match)))
-          (add-to-list 'records (cons f 1)))
-        (setq suffix
-              (if (cdr match)
-                  (format "<%d>" (cdr match))
-                ""))
-        (add-to-list 'pt-ido-recentf-list
-                     (cons (concat f suffix) file) t))))
-  (let ((filename
-         (ido-completing-read
-          "Open recent: "
-          (mapcar 'car pt-ido-recentf-list)
-          nil t)))
-    (let ((filename (assoc filename pt-ido-recentf-list)))
-      (when filename
-        (find-file (cdr filename))))))
-
-(defun pt-ido-kill-recentf ()
-  "Kill the recent file at the head of `ido-matches'
-and remove it from `recentf-list'. If cursor is not at
-the end of the user input, delete to end of input."
-  (interactive)
-  (if (not (eobp))
-      (delete-region (point) (line-end-position))
-    (let ((enable-recursive-minibuffers t)
-          (file (ido-name (car ido-matches))))
-      (when file
-        (setq recentf-list
-              (delq (cdr (assoc file pt-ido-recentf-list)) recentf-list))
-        (setq pt-ido-recentf-list
-              (delq (assoc file pt-ido-recentf-list) pt-ido-recentf-list))
-        (setq ido-cur-list
-              (delq file ido-cur-list))))))
-
-(add-hook 'ido-setup-hook
-          #'(lambda ()
-              (define-key ido-common-completion-map [?\C-k] 'pt-ido-kill-recentf)))
-(define-key ctl-x-map "\C-r" 'pt-ido-find-recentf)
-
 (defun pt-capitalize-word-or-region (&optional arg)
   (interactive "p")
   (if mark-active
