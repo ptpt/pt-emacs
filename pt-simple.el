@@ -501,43 +501,35 @@ Return a list of the new created directories."
                      (y-or-n-p (format "%s: no such directory; create? " dir))
                      (make-directory dir t)))))
 
-(defvar pt-binary-range '(0 . 0))
+(defvar pt-binary-span 0)
 
 (defun pt-binary-previous-line (&optional arg)
-  (interactive "P")
-  (when (or arg
-            (not (memq last-command
-                       '(pt-binary-next-line
-                         pt-binary-previous-line))))
-    (save-excursion
-      (let ((end (point)))
-        (setcdr pt-binary-range (line-number-at-pos))
-        ;; (move-to-window-line 0)
-        (goto-char (window-start))
-        (setcar pt-binary-range (- (cdr pt-binary-range)
-                                   (count-screen-lines (point) end))))))
-  (let ((lines (max 1 (ceiling (/ (- (cdr pt-binary-range)
-                                     (car pt-binary-range)) 2.0)))))
-    (setcdr pt-binary-range (- (cdr pt-binary-range) lines))
-    (previous-line lines)))
+  (interactive "p")
+  (unless (and (numberp pt-binary-span)
+               (memq last-command
+                     '(pt-binary-next-line
+                       pt-binary-previous-line)))
+    (setq pt-binary-span
+          (if line-move-visual
+              (count-screen-lines (window-start) (point))
+            (count-lines (window-start) (point)))))
+  (dotimes (i arg)
+    (previous-line (max 1 (/ pt-binary-span 2)))
+    (setq pt-binary-span (- pt-binary-span (/ pt-binary-span 2)))))
 
 (defun pt-binary-next-line (&optional arg)
-  (interactive "P")
-  (when (or arg
-            (not (memq last-command
-                       '(pt-binary-next-line
-                         pt-binary-previous-line))))
-    (save-excursion
-      (let ((start (point)))
-        (setcar pt-binary-range (line-number-at-pos))
-        ;; (move-to-window-line -1)
-        (goto-char (window-end))
-        (setcdr pt-binary-range (+ (count-screen-lines start (point))
-                                   (car pt-binary-range))))))
-  (let ((lines  (max 1 (ceiling (/ (- (cdr pt-binary-range)
-                                      (car pt-binary-range)) 2.0)))))
-    (setcar pt-binary-range (+ (car pt-binary-range) lines))
-    (next-line lines)))
+  (interactive "p")
+  (unless (and (numberp pt-binary-span)
+               (memq last-command
+                     '(pt-binary-next-line
+                       pt-binary-previous-line)))
+    (setq pt-binary-span
+          (if line-move-visual
+              (count-screen-lines (point) (window-end))
+            (count-lines (point) (window-end)))))
+  (dotimes (i arg)
+    (next-line (max 1 (/ pt-binary-span 2)))
+    (setq pt-binary-span (- pt-binary-span (/ pt-binary-span 2)))))
 
 (global-set-key [?\M-p] 'pt-binary-previous-line)
 (global-set-key [?\M-n] 'pt-binary-next-line)
