@@ -503,16 +503,38 @@ Return a list of the new created directories."
 
 (defvar pt-binary-span 0)
 
+(defun pt-count-window-lines (&optional pos counter)
+  "Return the number of lines between window top line and POS.
+If pos is nil, it defaults to current point.
+COUNTER, if non-nil, means count lines between bottom line and POS."
+  (let ((pos (or pos (point)))
+        window-start
+        window-end)
+    (save-excursion
+      ;; get window start and end points
+      (move-to-window-line 0)
+      (setq window-start (point))
+      ;; you can also use (window-start) and (window-end) to get the points,
+      ;; but (window-end) will get the start point of the line that totally
+      ;; doesn't show, while (move-to-window-line -1) just goto the start point
+      ;; of the last line that is totally shown in the window.
+      (move-to-window-line -1)
+      (setq window-end (point))
+      (goto-char pos)
+      (if line-move-visual
+          (progn (vertical-motion 0)
+                 (count-screen-lines (if counter (point) window-start)
+                                     (if counter window-end (point))))
+        (progn (count-lines (if counter (line-beginning-position) window-start)
+                            (if counter window-end (line-beginning-position))))))))
+
 (defun pt-binary-previous-line (&optional arg)
   (interactive "p")
   (unless (and (numberp pt-binary-span)
                (memq last-command
                      '(pt-binary-next-line
                        pt-binary-previous-line)))
-    (setq pt-binary-span
-          (if line-move-visual
-              (count-screen-lines (window-start) (point))
-            (count-lines (window-start) (point)))))
+    (setq pt-binary-span (1+ (pt-count-window-lines))))
   (dotimes (i arg)
     (previous-line (max 1 (/ pt-binary-span 2)))
     (setq pt-binary-span (- pt-binary-span (/ pt-binary-span 2)))))
@@ -523,10 +545,7 @@ Return a list of the new created directories."
                (memq last-command
                      '(pt-binary-next-line
                        pt-binary-previous-line)))
-    (setq pt-binary-span
-          (if line-move-visual
-              (count-screen-lines (point) (window-end))
-            (count-lines (point) (window-end)))))
+    (setq pt-binary-span (1+ (pt-count-window-lines nil t))))
   (dotimes (i arg)
     (next-line (max 1 (/ pt-binary-span 2)))
     (setq pt-binary-span (- pt-binary-span (/ pt-binary-span 2)))))
