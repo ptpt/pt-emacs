@@ -206,7 +206,22 @@ current lines using `pt-delete-lines'."
       (pt-hungry-delete-forwards)
     (pt-hungry-delete-backwards)))
 
-(global-set-key [?\M-\\] 'pt-hungry-delete)
+(defun pt-backward-kill-word-or-whitespace ()
+  "hungrily kill word backward."
+  (interactive)
+  (if (looking-back "[ \t\n\r\f\v]")
+      (pt-hungry-delete-backwards)
+    (backward-kill-word 1)))
+
+(defun pt-forward-kill-word-or-whitespace ()
+  "hungrily kill word backward."
+  (interactive)
+  (if (looking-at "[ \t\n\r\f\v]")
+      (pt-hungry-delete-forwards)
+    (kill-word 1)))
+
+(global-set-key (kbd "M-DEL") 'pt-backward-kill-word-or-whitespace)
+(global-set-key "\M-d" 'pt-forward-kill-word-or-whitespace)
 
 (defvar pt-new-buffer-hook nil
   "List of functions to be called after a new buffer is created by
