@@ -101,7 +101,7 @@ also set font for new frames."
 
 (defun pt-beginning-of-line-or-text ()
   "Switch position between beginning of line and text."
-  (interactive)
+  (interactive "^")
   (let ((pt (point)))
     (back-to-indentation)
     (when (= pt (point))
