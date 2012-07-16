@@ -350,7 +350,7 @@ non-file-visted-buffer."
 (defadvice kill-this-buffer
   (after pt-kill-this-buffer-and-switch-to-next-buffer
          activate)
-  (when (and (called-interactively-p 'any)
+  (when (and (called-interactively-p)
              (and (null pt-new-buffer-is-me)
                   (null (buffer-file-name))))
     (pt-next-buffer 1)))
@@ -467,7 +467,7 @@ Return a list of the new created directories."
 (defadvice save-buffer (around pave-path activate)
   "Pave the path of the visited file before save buffer"
   (if (and (not (buffer-file-name))
-           (called-interactively-p 'any))
+           (called-interactively-p))
       (condition-case err
           ad-do-it
         (error
