@@ -610,5 +610,28 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 (define-key minibuffer-local-map [backspace]
   'pt-minibuffer-delete-backward-char)
 
+(defun pt-rename-this-buffer-and-file (new-name)
+  "Renames both current buffer and file it's visiting to NEW-NAME."
+  (interactive (list (if (buffer-file-name)
+                         (read-file-name (format "Rename file '%s' to: " (buffer-name)))
+                       (read-buffer (format "Rename buffer '%s' to: " (buffer-name))))))
+  (let ((new-buffer-name (if (buffer-file-name)
+                             (file-name-nondirectory new-name)
+                           new-name))
+        (this-file-name (buffer-file-name)))
+    (if (and this-file-name
+             (not (pt-same-file-p this-file-name new-name)))
+        (when (or (and (file-exists-p new-name)
+                       (y-or-n-p "Replace?"))
+                  (not (file-exists-p new-name)))
+          (rename-file this-file-name new-name t)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil)))
+    (if (and (not (string-equal new-buffer-name (buffer-name)))
+             (get-buffer new-buffer-name)
+             (y-or-n-p (format "The buffer '%s' already exists.  Rename to '%s'?"
+                               new-buffer-name
+                               (generate-new-buffer-name new-buffer-name))))
+        (rename-buffer (generate-new-buffer-name new-buffer-name)))))
 (provide 'pt-simple)
 ;; pt-simple ends here
