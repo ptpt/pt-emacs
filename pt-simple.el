@@ -107,7 +107,7 @@ also set font for new frames."
     (when (= pt (point))
       (move-beginning-of-line nil))))
 
-(global-set-key [?\C-a] 'pt-beginning-of-line-or-text)
+(global-set-key [remap move-beginning-of-line] 'pt-beginning-of-line-or-text)
 
 (defun pt-delete-lines (&optional arg)
   "Delete lines like `delete-blank-lines'.
@@ -133,7 +133,6 @@ current lines using `pt-delete-lines'."
       (kill-region (mark) (point))
     (pt-delete-lines arg)))
 
-(global-set-key [?\C-w] 'pt-kill-region-or-line)
 
 (defun pt-keyboard-quit ()
   "Delete all windows that match `pt-ignored-buffers' and then call `keyboard-quit'"
@@ -146,6 +145,7 @@ current lines using `pt-delete-lines'."
   (keyboard-quit))
 
 (global-set-key [escape] 'pt-keyboard-quit)
+(global-set-key [remap kill-region] 'pt-kill-region-or-line)
 
 (defmacro pt-defun-treat-current-line-as-region (orig-function)
   `(defun ,(intern (concat "pt-" (symbol-name (eval orig-function)))) (&optional arg)
@@ -177,7 +177,7 @@ current lines using `pt-delete-lines'."
       (kill-ring-save (point) (mark)))
   (funcall (or (command-remapping 'set-mark-command) 'set-mark-command) arg))
 
-(global-set-key [?\M-w] 'pt-set-mark-or-copy-region)
+(global-set-key [remap kill-ring-save] 'pt-set-mark-or-copy-region)
 
 (defun pt-hungry-delete-backwards ()
   "Delete backwards whitespaces."
@@ -220,8 +220,8 @@ current lines using `pt-delete-lines'."
       (pt-hungry-delete-forwards)
     (kill-word 1)))
 
-(global-set-key (kbd "M-DEL") 'pt-backward-kill-word-or-whitespace)
-(global-set-key "\M-d" 'pt-forward-kill-word-or-whitespace)
+(global-set-key [remap backward-kill-word] 'pt-backward-kill-word-or-whitespace)
+(global-set-key [remap kill-word] 'pt-forward-kill-word-or-whitespace)
 
 (defvar pt-new-buffer-hook nil
   "List of functions to be called after a new buffer is created by
@@ -412,6 +412,8 @@ non-file-visted-buffer."
             (window-list))
       (pt-next-buffer))))
 
+(global-set-key [remap split-window-below] 'pt-split-window)
+
 (defun pt-split-window-horizontally ()
   "Split window horizontally into 2 windows with different buffers."
   (interactive)
@@ -423,6 +425,8 @@ non-file-visted-buffer."
                              (buffer-name (window-buffer w))))
             (window-list))
       (pt-next-buffer))))
+
+(global-set-key [remap split-window-right] 'pt-split-window-horizontally)
 
 (defun pt-swap-windows ()
   "If you have 2 windows, it swaps them."
@@ -442,8 +446,6 @@ non-file-visted-buffer."
            (set-window-start w2 s1))))
   (other-window 1))
 
-(define-key ctl-x-map "2" 'pt-split-window)
-(define-key ctl-x-map "3" 'pt-split-window-horizontally)
 (define-key ctl-x-map "7" 'pt-swap-windows)
 
 (defun pt-delete-directory (dir)
@@ -571,9 +573,9 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
       (downcase-region (mark) (point))
     (downcase-word arg)))
 
-(global-set-key [?\M-c] 'pt-capitalize-word-or-region)
-(global-set-key [?\M-u] 'pt-upcase-word-or-region)
-(global-set-key [?\M-l] 'pt-downcase-word-or-region)
+(global-set-key [remap capitalize-word] 'pt-capitalize-word-or-region)
+(global-set-key [remap upcase-word] 'pt-upcase-word-or-region)
+(global-set-key [remap downcase-word] 'pt-downcase-word-or-region)
 
 (defun pt-switch-buffer (&optional arg)
   (interactive "P")
