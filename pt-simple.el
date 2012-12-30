@@ -35,7 +35,7 @@
 
 (defvar pt-ignored-buffers
   '("*Help*" "*Completions*" "*Diff*" "*Messages*"
-    "*Buffer List*" "*Apropos*")
+    "*Buffer List*" "*Apropos*" "*compilation*")
   "Skip the buffers when `pt-next-buffer' and `pt-previous-buffer'.")
 
 
