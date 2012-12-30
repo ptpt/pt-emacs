@@ -133,18 +133,6 @@ current lines using `pt-delete-lines'."
       (kill-region (mark) (point))
     (pt-delete-lines arg)))
 
-
-(defun pt-keyboard-quit ()
-  "Delete all windows that match `pt-ignored-buffers' and then call `keyboard-quit'"
-  (interactive)
-  (mapc #'(lambda (name)
-            (dolist (window (cdr (window-list nil nil (selected-window))))
-              (if (string-equal name (buffer-name (window-buffer window)))
-                  (delete-window window))))
-        pt-ignored-buffers)
-  (keyboard-quit))
-
-(global-set-key [escape] 'pt-keyboard-quit)
 (global-set-key [remap kill-region] 'pt-kill-region-or-line)
 
 (defmacro pt-defun-treat-current-line-as-region (orig-function)
