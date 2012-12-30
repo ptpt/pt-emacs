@@ -623,5 +623,12 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
                                new-buffer-name
                                (generate-new-buffer-name new-buffer-name))))
         (rename-buffer (generate-new-buffer-name new-buffer-name)))))
+
+(defmacro pt-add-hook (hook &rest form)
+  "Add FORM to HOOK."
+  `(add-hook ,hook (lambda () ,@form)))
+
+
 (provide 'pt-simple)
+
 ;; pt-simple ends here
