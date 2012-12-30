@@ -161,8 +161,8 @@ current lines using `pt-delete-lines'."
 
 (defun pt-set-mark-or-copy-region (&optional arg)
   (interactive "P")
-  (if mark-active
-      (kill-ring-save (point) (mark)))
+  (if (use-region-p)
+      (kill-ring-save (mark) (point)))
   (funcall (or (command-remapping 'set-mark-command) 'set-mark-command) arg))
 
 (global-set-key [remap kill-ring-save] 'pt-set-mark-or-copy-region)
