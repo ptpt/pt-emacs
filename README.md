@@ -1,6 +1,10 @@
-**pt-emacs** redefines some of my frequently-used commands as well as
-provides some useful commands. In a word, **pt-emacs** makes the Emacs
-better.
+##Introduction
+
+**pt-emacs** was originally my personal Emacs configuration. It
+redefines some of my frequently-used commands and also provides
+some useful commands.
+
+##Installation
 
 To install this package:
 
