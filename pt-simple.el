@@ -232,10 +232,10 @@ current lines using `pt-delete-lines'."
      (cond ((numberp arg)
             (or
              (cdr (assoc (abs arg) pt-new-buffer-mode-alist))
-             default-major-mode))
+             major-mode))
            ((consp arg)
             mode)
-           (t default-major-mode)))
+           (t major-mode)))
     (setq pt-new-buffer-is-me t)
     (if (or (and (numberp arg)
                  (>= arg 0))
