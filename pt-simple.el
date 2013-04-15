@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+
 ;;; pt-simple.el --- Tao Peng's basic configuration for Emacs
 
 ;; Copyright (C) 2010, 2011 Tao Peng <ptpttt@gmail.com>
@@ -135,23 +137,16 @@ current lines using `pt-delete-lines'."
 
 (global-set-key [remap kill-region] 'pt-kill-region-or-line)
 
-(defmacro pt-defun-treat-current-line-as-region (orig-function)
-  `(defun ,(intern (concat "pt-" (symbol-name (eval orig-function)))) (&optional arg)
-     ,(format
-       "Like `%s', except acts on the current line if mark is not active."
-       (eval orig-function))
-     (interactive "p")
-     (save-excursion
-       (when (not mark-active)
-         (beginning-of-line)
-         (push-mark-command t t)
-         (end-of-line arg))
-       (call-interactively (quote ,(eval orig-function))))))
-
-(mapc #'(lambda (command)
-          (global-set-key (vector 'remap command)
-                          (intern (concat "pt-" (symbol-name command))))
-          (pt-defun-treat-current-line-as-region command))
+(mapc (lambda (command)
+        (global-set-key (vector 'remap command)
+                        (lambda (&optional arg)
+                          (interactive "p")
+                          (save-excursion
+                            (when (not mark-active)
+                              (beginning-of-line)
+                              (push-mark-command t t)
+                              (end-of-line arg))
+                            (call-interactively command)))))
       '(kill-ring-save
         kill-region
         comment-region
