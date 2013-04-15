@@ -259,7 +259,7 @@ current lines using `pt-delete-lines'."
 (add-hook 'kill-buffer-query-functions
           'pt-new-buffer-query-funtion)
 
-(defun pt-buffer-file-name (&optional buffer)
+(defun pt-buffer-file-basename (&optional buffer)
   (or (and (buffer-file-name buffer)
            (file-name-nondirectory (buffer-file-name buffer)))
       (buffer-name buffer)))
