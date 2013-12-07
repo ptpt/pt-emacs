@@ -299,11 +299,11 @@ non-file-visted-buffer."
                       (or pt-new-buffer-is-me (buffer-file-name)))))
       (previous-buffer))))
 
-(defun pt-beginning-or-end-of-buffer (&optional arg)
-  (interactive "^P")
+(defun pt-beginning-or-end-of-buffer ()
+  (interactive)
   (if (bobp)
-      (end-of-buffer arg)
-    (beginning-of-buffer arg)))
+      (goto-char (point-max))
+    (goto-char (point-min))))
 
 (defun pt-forward-whitespace (&optional arg)
   "Move point forward whitespace."
