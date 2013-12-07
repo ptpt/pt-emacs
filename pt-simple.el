@@ -67,9 +67,9 @@
 
 (defun pt-add-subdirectories-to-list (dir)
   "Add all subdirectories not starting with \".\" of DIR to `load-path'."
-  (mapc #'(lambda (file)
-            (if (file-directory-p file)
-                (add-to-list 'load-path file)))
+  (mapc (lambda (file)
+          (if (file-directory-p file)
+              (add-to-list 'load-path file)))
         (directory-files dir t "\\`[^.]")))
 
 (defun pt-set-font (&optional font)
@@ -385,9 +385,9 @@ non-file-visted-buffer."
   (save-selected-window
     (select-window (split-window) t)
     (let ((pt-ignored-buffers pt-ignored-buffers))
-      (mapc #'(lambda (w)
-                (add-to-list 'pt-ignored-buffers
-                             (buffer-name (window-buffer w))))
+      (mapc (lambda (w)
+              (add-to-list 'pt-ignored-buffers
+                           (buffer-name (window-buffer w))))
             (window-list))
       (pt-next-buffer))))
 
@@ -399,9 +399,9 @@ non-file-visted-buffer."
   (save-selected-window
     (select-window (split-window-horizontally) t)
     (let ((pt-ignored-buffers pt-ignored-buffers))
-      (mapc #'(lambda (w)
-                (add-to-list 'pt-ignored-buffers
-                             (buffer-name (window-buffer w))))
+      (mapc (lambda (w)
+              (add-to-list 'pt-ignored-buffers
+                           (buffer-name (window-buffer w))))
             (window-list))
       (pt-next-buffer))))
 
@@ -476,11 +476,11 @@ Return a list of the new created directories."
     ad-do-it))
 
 (add-hook 'write-file-functions
-          #'(lambda ()
-              (let ((dir (file-name-directory (buffer-file-name))))
-                (and (not (file-directory-p dir))
-                     (y-or-n-p (format "%s: no such directory; create? " dir))
-                     (make-directory dir t)))))
+          (lambda ()
+            (let ((dir (file-name-directory (buffer-file-name))))
+              (and (not (file-directory-p dir))
+                   (y-or-n-p (format "%s: no such directory; create? " dir))
+                   (make-directory dir t)))))
 
 (defvar pt-binary-span 0)
 
