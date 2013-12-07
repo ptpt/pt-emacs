@@ -72,11 +72,6 @@
                 (add-to-list 'load-path file)))
         (directory-files dir t "\\`[^.]")))
 
-(defmacro pt-same-file-p (f1 f2)
-  "Return t if two directory pathes are same."
-  `(string-equal (downcase (file-name-as-directory (file-truename (expand-file-name ,f1))))
-                 (downcase (file-name-as-directory (file-truename (expand-file-name ,f2))))))
-
 (defun pt-set-font (&optional font)
   "Like `set-frame-font', in addition to set font of the current frame, it
 also set font for new frames."
