@@ -591,6 +591,11 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 (define-key minibuffer-local-map [backspace]
   'pt-minibuffer-delete-backward-char)
 
+(defmacro pt-same-file-p (f1 f2)
+  "Return t if two directory pathes are same."
+  `(string-equal (file-name-as-directory (file-truename (expand-file-name ,f1)))
+                 (file-name-as-directory (file-truename (expand-file-name ,f2)))))
+
 (defun pt-rename-this-buffer-and-file (new-name)
   "Renames both current buffer and file it's visiting to NEW-NAME."
   (interactive (list (if (buffer-file-name)
