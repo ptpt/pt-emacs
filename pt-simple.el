@@ -517,6 +517,15 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
       (package-refresh-contents))
     (package-install package)))
 
+(defun pt-immediately-quit-term ()
+  (set-process-sentinel
+   (get-buffer-process (current-buffer))
+   (lambda (proc event)
+     (when (string-equal event "finished\n")
+       (kill-this-buffer)))))
+
+(add-hook 'term-exec-hook #'pt-immediately-quit-term)
+
 (provide 'pt-simple)
 
 ;; pt-simple ends here
