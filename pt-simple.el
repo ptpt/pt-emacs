@@ -485,31 +485,32 @@ Return a list of the new created directories."
                    (make-directory dir t)))))
 
 (defvar pt-binary-span 0)
+(make-variable-buffer-local 'pt-binary-span)
 
 (defun pt-count-window-lines (&optional pos counter)
   "Return the number of lines between window top line and POS.
 If pos is nil, it defaults to current point.
 COUNTER, if non-nil, means count lines between bottom line and POS."
   (let ((pos (or pos (point)))
-        window-start
-        window-end)
+        window-start-pos
+        window-end-pos)
     (save-excursion
       ;; get window start and end points
       (move-to-window-line 0)
-      (setq window-start (point))
+      (setq window-start-pos (point))
       ;; you can also use (window-start) and (window-end) to get the points,
       ;; but (window-end) will get the start point of the line that totally
       ;; doesn't show, while (move-to-window-line -1) just goto the start point
       ;; of the last line that is totally shown in the window.
       (move-to-window-line -1)
-      (setq window-end (point))
+      (setq window-end-pos (point))
       (goto-char pos)
       (if line-move-visual
           (progn (vertical-motion 0)
-                 (count-screen-lines (if counter (point) window-start)
-                                     (if counter window-end (point))))
-        (progn (count-lines (if counter (line-beginning-position) window-start)
-                            (if counter window-end (line-beginning-position))))))))
+                 (count-screen-lines (if counter (point) window-start-pos)
+                                     (if counter window-end-pos (point))))
+        (progn (count-lines (if counter (line-beginning-position) window-start-pos)
+                            (if counter window-end-pos (line-beginning-position))))))))
 
 (defun pt-binary-previous-line (&optional arg)
   (interactive "p")
