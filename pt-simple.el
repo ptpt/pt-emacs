@@ -449,11 +449,21 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 ;; get rid of the annoying error message "text is read-only"
 (defun pt-minibuffer-delete-backward-char (&optional arg)
   (interactive "p")
-  (unless (get-text-property (- (point) 1) 'read-only)
-    (delete-backward-char arg)))
+  (let ((pt (max (- (point) 1) (point-min))))
+    (unless (get-text-property pt 'read-only)
+      (delete-backward-char arg))))
 
-(define-key minibuffer-local-map [backspace]
+(define-key minibuffer-local-map [remap delete-backward-char]
   'pt-minibuffer-delete-backward-char)
+
+(defun pt-minibuffer-backward-kill-word (&optional arg)
+  (interactive "p")
+  (let ((pt (max (- (point) 1) (point-min))))
+    (unless (get-text-property pt 'read-only)
+      (backward-kill-word arg))))
+
+(define-key minibuffer-local-map [remap backward-kill-word]
+  'pt-minibuffer-backward-kill-word)
 
 (defmacro pt-same-file-p (f1 f2)
   "Return t if two directory pathes are same."
@@ -488,6 +498,13 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
   "Add FORM to HOOK."
   `(add-hook ,hook (lambda () ,@form)))
 
+(defun pt-kill-line-or-region (&optional arg)
+  (interactive "P")
+  (if (use-region-p)
+      (kill-region (mark) (point))
+    (kill-line arg)))
+
+(global-set-key [remap kill-line] 'pt-kill-line-or-region)
 
 (provide 'pt-simple)
 
