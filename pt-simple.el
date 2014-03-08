@@ -526,6 +526,23 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 
 (add-hook 'term-exec-hook #'pt-immediately-quit-term)
 
+(defun pt-open-ansi-term (&optional new)
+  (interactive "P")
+  (let ((shell-buffer "*ansi-term*")
+        (shell-program
+         (or (and (boundp 'explicit-shell-file-name)
+                  explicit-shell-file-name)
+             (getenv "ESHELL")
+             (getenv "SHELL")
+             "/bin/sh")))
+    (if new
+        (ansi-term shell-program)
+      (if (get-buffer shell-buffer)
+          (pop-to-buffer (get-buffer shell-buffer))
+        (ansi-term shell-program)))))
+
+(define-key ctl-x-map [?\M-t] 'pt-open-ansi-term)
+
 (provide 'pt-simple)
 
 ;; pt-simple ends here
