@@ -506,6 +506,17 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 
 (global-set-key [remap kill-line] 'pt-kill-line-or-region)
 
+(defvar pt-package-content-refreshed nil
+  "An internal variable used to detect if packages information is
+  refreshed")
+
+(defun pt-install-package (package &optional min-version)
+  (unless (package-installed-p package min-version)
+    (unless pt-package-content-refreshed
+      (setq pt-package-content-refreshed t)
+      (package-refresh-contents))
+    (package-install package)))
+
 (provide 'pt-simple)
 
 ;; pt-simple ends here
