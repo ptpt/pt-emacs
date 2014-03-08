@@ -95,7 +95,7 @@ also set font for new frames."
          (indent-for-tab-command arg))
         (t (dabbrev-expand arg))))
 
-(global-set-key (kbd "TAB") 'pt-tab-command)
+(global-set-key [remap indent-for-tab-command] 'pt-tab-command)
 
 (defun pt-beginning-of-line-or-text ()
   "Switch position between beginning of line and text."
@@ -392,6 +392,7 @@ non-file-visted-buffer."
       (pt-next-buffer))))
 
 (global-set-key [remap split-window-below] 'pt-split-window)
+(global-set-key [remap split-window-vertically] 'pt-split-window)
 
 (defun pt-split-window-horizontally ()
   "Split window horizontally into 2 windows with different buffers."
@@ -406,6 +407,7 @@ non-file-visted-buffer."
       (pt-next-buffer))))
 
 (global-set-key [remap split-window-right] 'pt-split-window-horizontally)
+(global-set-key [remap split-window-horizontally] 'pt-split-window-horizontally)
 
 (defun pt-swap-windows ()
   "If you have 2 windows, it swaps them."
