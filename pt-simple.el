@@ -38,14 +38,6 @@
 
 
 ;;; functions
-(defadvice message (around pt-inhibit-message compile)
-  (ignore))
-
-(defmacro pt-inhibit-message (&rest forms)
-  `(progn
-     (ad-activate-regexp "\\`pt-inhibit-message\\'")
-     ,@forms
-     (ad-deactivate-regexp "\\`pt-inhibit-message\\'")))
 
 (defadvice mouse-drag-region
   (around pt-mouse-drag-region-no-cursor activate)
