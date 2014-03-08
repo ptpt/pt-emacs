@@ -36,11 +36,6 @@
 
 ;; variables
 
-(defvar pt-ignored-buffers
-  '("*Help*" "*Completions*" "*Diff*" "*Messages*"
-    "*Buffer List*" "*Apropos*" "*compilation*")
-  "Skip the buffers when `pt-next-buffer' and `pt-previous-buffer'.")
-
 
 ;;; functions
 (defadvice message (around pt-inhibit-message compile)
@@ -202,58 +197,6 @@ current lines using `pt-delete-lines'."
 (global-set-key [remap backward-kill-word] 'pt-backward-kill-word-or-whitespace)
 (global-set-key [remap kill-word] 'pt-forward-kill-word-or-whitespace)
 
-(defvar pt-new-buffer-hook nil
-  "List of functions to be called after a new buffer is created by
-  `pt-new-buffer'.")
-
-(defvar pt-new-buffer-mode-alist nil
-  "When create new buffer with prefix arg, the new buffer will use the
-  mode corresponding to the arg in this list as major mode.")
-
-(defvar pt-new-buffer-is-me nil
-  "Non-nil means the buffer was created by `pt-new-buffer'. This kind of
-  buffer will serve as a special buffer, e.g. Killing this buffer will
-  be asked. It's for internal use and will be set automatically")
-
-(put 'pt-new-buffer-is-me 'permanent-local t)
-(make-variable-buffer-local 'pt-new-buffer-is-me)
-
-(defun pt-new-buffer (&optional arg)
-  "Create a new buffer."
-  (interactive "P")
-  (let ((mode major-mode))
-    (switch-to-buffer (generate-new-buffer "untitled"))
-    (funcall
-     (cond ((numberp arg)
-            (or
-             (cdr (assoc (abs arg) pt-new-buffer-mode-alist))
-             major-mode))
-           ((consp arg)
-            mode)
-           (t major-mode)))
-    (setq pt-new-buffer-is-me t)
-    (if (or (and (numberp arg)
-                 (>= arg 0))
-            (and (consp arg)
-                 (= 4 (car arg))))
-        (run-hooks 'pt-new-buffer-hook))
-    (set-buffer-modified-p nil)))
-
-(define-key ctl-x-map [?\C-n] 'pt-new-buffer)
-(global-set-key [(alt n)] 'pt-new-buffer)
-
-(defun pt-new-buffer-query-funtion ()
-  (if (and pt-new-buffer-is-me
-           (not (buffer-file-name))
-           (buffer-modified-p)
-           (> (buffer-size) 0))
-      (y-or-n-p (format "Buffer %s modified; kill anyway? "
-                        (buffer-name)))
-    t))
-
-(add-hook 'kill-buffer-query-functions
-          'pt-new-buffer-query-funtion)
-
 (defun pt-buffer-file-basename (&optional buffer)
   (or (and (buffer-file-name buffer)
            (file-name-nondirectory (buffer-file-name buffer)))
@@ -262,42 +205,6 @@ current lines using `pt-delete-lines'."
 (defmacro pt-xor (a b)
   "XOR logic operation."
   `(and (or ,a ,b) (not (and ,a ,b))))
-
-(defun pt-next-buffer (&optional arg)
-  "Switch to next buffer which is not in `pt-ignored-buffers'.
-If ARG is non-nil, then switch between file-visted-buffer and
-non-file-visted-buffer."
-  (interactive "P")
-  (let ((buffer (current-buffer))
-        (new-buffer pt-new-buffer-is-me))
-    (next-buffer)
-    (setq arg (pt-xor (or new-buffer
-                          (buffer-file-name buffer)) arg))
-    (while (and (not (eq buffer (current-buffer)))
-                (or (member (buffer-name)
-                            pt-ignored-buffers)
-                    (if arg (and (not pt-new-buffer-is-me)
-                                 (not (buffer-file-name)))
-                      (or pt-new-buffer-is-me (buffer-file-name)))))
-      (next-buffer))))
-
-(defun pt-previous-buffer (&optional arg)
-  "Switch to previous buffer which is not in `pt-ignored-buffers'.
-If ARG is non-nil, then switch between file-visted-buffer and
-non-file-visted-buffer."
-  (interactive "P")
-  (let ((buffer (current-buffer))
-        (new-buffer pt-new-buffer-is-me))
-    (previous-buffer)
-    (setq arg (pt-xor (or new-buffer
-                          (buffer-file-name buffer)) arg))
-    (while (and (not (eq buffer (current-buffer)))
-                (or (member (buffer-name)
-                            pt-ignored-buffers)
-                    (if arg (and (not pt-new-buffer-is-me)
-                                 (not (buffer-file-name)))
-                      (or pt-new-buffer-is-me (buffer-file-name)))))
-      (previous-buffer))))
 
 (defun pt-beginning-or-end-of-buffer ()
   (interactive)
@@ -325,14 +232,6 @@ non-file-visted-buffer."
 
 (global-set-key (kbd "M-e") 'pt-forward-whitespace)
 (global-set-key (kbd "M-a") 'pt-backward-whitespace)
-
-(defadvice kill-this-buffer
-  (after pt-kill-this-buffer-and-switch-to-next-buffer
-         activate)
-  (when (and (called-interactively-p 'any)
-             (and (null pt-new-buffer-is-me)
-                  (null (buffer-file-name))))
-    (pt-next-buffer 1)))
 
 (when (eq 'darwin system-type)
   (defun pt-pbpaste ()
@@ -378,36 +277,6 @@ non-file-visted-buffer."
         (t
          (setq cursor-type (default-value 'cursor-type))
          (blink-cursor-mode 1))))
-
-(defun pt-split-window ()
-  "Split window into 2 windows with different buffers."
-  (interactive)
-  (save-selected-window
-    (select-window (split-window) t)
-    (let ((pt-ignored-buffers pt-ignored-buffers))
-      (mapc (lambda (w)
-              (add-to-list 'pt-ignored-buffers
-                           (buffer-name (window-buffer w))))
-            (window-list))
-      (pt-next-buffer))))
-
-(global-set-key [remap split-window-below] 'pt-split-window)
-(global-set-key [remap split-window-vertically] 'pt-split-window)
-
-(defun pt-split-window-horizontally ()
-  "Split window horizontally into 2 windows with different buffers."
-  (interactive)
-  (save-selected-window
-    (select-window (split-window-horizontally) t)
-    (let ((pt-ignored-buffers pt-ignored-buffers))
-      (mapc (lambda (w)
-              (add-to-list 'pt-ignored-buffers
-                           (buffer-name (window-buffer w))))
-            (window-list))
-      (pt-next-buffer))))
-
-(global-set-key [remap split-window-right] 'pt-split-window-horizontally)
-(global-set-key [remap split-window-horizontally] 'pt-split-window-horizontally)
 
 (defun pt-swap-windows ()
   "If you have 2 windows, it swaps them."
