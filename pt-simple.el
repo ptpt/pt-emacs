@@ -543,6 +543,15 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 
 (define-key ctl-x-map [?\M-t] 'pt-open-ansi-term)
 
+(defun pt-whitespace-cleanup ()
+  (interactive)
+  (if (use-region-p)
+      (whitespace-cleanup-region (point) (mark))
+    (whitespace-cleanup))
+  (message "Whitespace cleanup done"))
+
+(define-key ctl-x-map (kbd "SPC") #'pt-whitespace-cleanup)
+
 (provide 'pt-simple)
 
 ;; pt-simple ends here
