@@ -149,17 +149,16 @@ current lines using `pt-delete-lines'."
   "Delete backwards whitespaces."
   (interactive)
   (let ((here (point)))
+    ;; copy from `c-skip-ws-backward'
     (skip-chars-backward " \t\n\r\f\v")
     (when (/= here (point))
       (delete-region (point) here))))
-
-(when window-system
-  (global-set-key [C-backspace] 'pt-hungry-delete-backwards))
 
 (defun pt-hungry-delete-forwards ()
   "Delete forwards whitespaces."
   (interactive)
   (let ((here (point)))
+    ;; copy from `c-skip-ws-forward'
     (skip-chars-forward " \t\n\r\f\v")
     (when (/= here (point))
       (delete-region (point) here))))
