@@ -198,14 +198,14 @@ current lines using `pt-delete-lines'."
   `(and (or ,a ,b) (not (and ,a ,b))))
 
 (defun pt-beginning-or-end-of-buffer ()
-  (interactive)
+  (interactive "^")
   (if (bobp)
       (goto-char (point-max))
     (goto-char (point-min))))
 
 (defun pt-forward-whitespace (&optional arg)
   "Move point forward whitespace."
-  (interactive "p")
+  (interactive "^p")
   (re-search-forward
    "[^ \t\n\r\f$][ \t\n\r\f$]\\|\\'"
    nil nil arg)
@@ -214,7 +214,7 @@ current lines using `pt-delete-lines'."
 
 (defun pt-backward-whitespace (&optional arg)
   "Move point backward whitespace."
-  (interactive "p")
+  (interactive "^p")
   (re-search-backward
    "[ \t\n\r\f^][^ \t\n\r\f^]\\|\\`"
    nil nil arg)
@@ -373,7 +373,7 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
                             (if counter window-end-pos (line-beginning-position))))))))
 
 (defun pt-binary-previous-line (&optional arg)
-  (interactive "p")
+  (interactive "^p")
   (unless (and (numberp pt-binary-span)
                (memq last-command
                      '(pt-binary-next-line
@@ -384,7 +384,7 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
     (setq pt-binary-span (- pt-binary-span (/ pt-binary-span 2)))))
 
 (defun pt-binary-next-line (&optional arg)
-  (interactive "p")
+  (interactive "^p")
   (unless (and (numberp pt-binary-span)
                (memq last-command
                      '(pt-binary-next-line
