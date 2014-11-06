@@ -525,6 +525,14 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 
 (add-hook 'term-exec-hook #'pt-immediately-quit-term)
 
+(defun pt--advice-add-login-switch (args)
+  "open term as login shell"
+  (cond ((= (length args) 2)
+         (append args '(nil "--login")))
+        ((= (length args) 3)
+         (append args '("--login")))
+        (t args)))
+
 (defun pt-open-ansi-term (&optional new)
   (interactive "P")
   (let ((shell-buffer "*ansi-term*")
@@ -534,11 +542,20 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
              (getenv "ESHELL")
              (getenv "SHELL")
              "/bin/sh")))
+
+    (if (fboundp 'advice-add)
+        (advice-add 'term-ansi-make-term
+                    :filter-args
+                    #'pt--advice-add-login-switch))
     (if new
         (ansi-term shell-program)
       (if (get-buffer shell-buffer)
           (pop-to-buffer (get-buffer shell-buffer))
-        (ansi-term shell-program)))))
+        (ansi-term shell-program)))
+
+    (if (fboundp 'advice-remove)
+        (advice-remove 'term-ansi-make-term
+                       #'pt--advice-add-login-switch))))
 
 (define-key ctl-x-map [?\M-t] 'pt-open-ansi-term)
 
