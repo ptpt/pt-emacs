@@ -2,7 +2,7 @@
 
 ;;; pt-simple.el --- Tao Peng's basic configuration for Emacs
 
-;; Copyright (C) 2010, 2011 Tao Peng <ptpttt@gmail.com>
+;; Copyright (C) 2010-2016 Tao Peng <ptpttt@gmail.com>
 
 ;; Author:   Tao Peng <ptpttt@gmail.com>
 ;; Keywords: local
