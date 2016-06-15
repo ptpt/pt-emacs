@@ -197,12 +197,6 @@ current lines using `pt-delete-lines'."
   "XOR logic operation."
   `(and (or ,a ,b) (not (and ,a ,b))))
 
-(defun pt-beginning-or-end-of-buffer ()
-  (interactive "^")
-  (if (bobp)
-      (goto-char (point-max))
-    (goto-char (point-min))))
-
 (defun pt-forward-whitespace (&optional arg)
   "Move point forward whitespace."
   (interactive "^p")
