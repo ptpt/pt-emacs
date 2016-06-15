@@ -40,7 +40,7 @@
 ;;; functions
 
 (defadvice mouse-drag-region
-  (around pt-mouse-drag-region-no-cursor activate)
+    (around pt-mouse-drag-region-no-cursor activate)
   (let ((old-cursor-type cursor-type))
     (setq cursor-type nil)
     ad-do-it
@@ -97,7 +97,7 @@ also set font for new frames."
 (defun pt-delete-lines (&optional arg)
   "Delete lines like `delete-blank-lines'.
 But if current line is not blank, it will `kill-whole-line'."
-  (interactive "p")
+  (interactive "*p")
   (let (thisblank)
     (save-excursion
       (beginning-of-line)
@@ -112,8 +112,8 @@ But if current line is not blank, it will `kill-whole-line'."
 
 (defun pt-kill-region-or-line (&optional arg)
   "If mark is active, act `kill-region' as normal, otherwise delete
-current lines using `pt-delete-lines'."
-  (interactive "p")
+current lines using `pt-lines'."
+  (interactive "*p")
   (if mark-active
       (kill-region (mark) (point))
     (pt-delete-lines arg)))
@@ -248,10 +248,10 @@ current lines using `pt-delete-lines'."
         (name (buffer-name)))
     (if (not (and filename (file-exists-p filename)))
         (error "Buffer '%s' is not visiting a file!" name)
-      (when (yes-or-no-p "Are you sure you want to remove this file? ")
+      (when (yes-or-no-p "Are you sure to remove this file? ")
         (delete-file filename)
         (kill-buffer buffer)
-        (message "File '%s' successfully removed" filename)))))
+        (message "File '%s' has been removed successfully." filename)))))
 
 (defun pt-change-cursor-type ()
   (cond ((or buffer-read-only
@@ -373,7 +373,7 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
                      '(pt-binary-next-line
                        pt-binary-previous-line)))
     (setq pt-binary-span (1+ (pt-count-window-lines))))
-  (dotimes (i arg)
+  (dotimes (_ arg)
     (previous-line (max 1 (/ pt-binary-span 2)))
     (setq pt-binary-span (- pt-binary-span (/ pt-binary-span 2)))))
 
@@ -384,7 +384,7 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
                      '(pt-binary-next-line
                        pt-binary-previous-line)))
     (setq pt-binary-span (1+ (pt-count-window-lines nil t))))
-  (dotimes (i arg)
+  (dotimes (_ arg)
     (next-line (max 1 (/ pt-binary-span 2)))
     (setq pt-binary-span (- pt-binary-span (/ pt-binary-span 2)))))
 
@@ -414,7 +414,7 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 (global-set-key [remap downcase-word] 'pt-downcase-word-or-region)
 
 (defun pt-switch-buffer (&optional arg)
-  (interactive "P")
+  (interactive "p")
   (if (not (one-window-p))
       (other-window (or arg 1))
     (progn
