@@ -499,6 +499,16 @@ COUNTER, if non-nil, means count lines between bottom line and POS."
 
 (global-set-key [remap kill-line] 'pt-kill-line-or-region)
 
+(defun pt-kill-visual-line-or-region (&optional arg)
+  (interactive "P")
+  (if (use-region-p)
+      (kill-region (mark) (point))
+    (kill-visual-line arg)))
+
+(add-hook 'visual-line-mode-hook
+          (lambda ()
+            (define-key visual-line-mode-map [remap kill-line] 'pt-kill-visual-line-or-region)))
+
 (defvar pt-package-content-refreshed nil
   "An internal variable used to detect if packages information is
   refreshed")
