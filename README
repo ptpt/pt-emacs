@@ -1,4 +1,4 @@
-pt-emacs is my personal Emacs configuration. It redefines some
+pt-emacs, as my personal Emacs configuration, redefines some
 commands in simple.el and provides some useful commands.
 
 To install it:
